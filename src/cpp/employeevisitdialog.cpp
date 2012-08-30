@@ -10,11 +10,12 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, Q
     model = m;
 
     relationModel = model->relationModel(Visit_Employee_Id);
-
+    relationModel->setFilter("id = -1");
     // TODO: обрабатывать row при формировании модели списка сотрудников
-    relationModel->setFilter(tr("lname='Попов'"));
-    ui->emplCombo->setModel(relationModel);
-    ui->emplCombo->setModelColumn(relationModel->fieldIndex("lname"));
+
+    ui->emplListView->setModel(relationModel);
+    ui->emplListView->setModelColumn(relationModel->fieldIndex("lname"));
+
 }
 
 EmployeeVisitDialog::~EmployeeVisitDialog()
@@ -22,9 +23,13 @@ EmployeeVisitDialog::~EmployeeVisitDialog()
     delete ui;
 }
 
-void EmployeeVisitDialog::on_emplCombo_editTextChanged(const QString &arg1)
+void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
 {
-    const QString filterStr = "lname='ike '" + arg1 + "'";
-    relationModel->setFilter(filterStr);
-    //relationModel->select();
+    relationModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
+
+}
+
+void EmployeeVisitDialog::on_emplListView_pressed(const QModelIndex &index)
+{
+
 }

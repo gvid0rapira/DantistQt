@@ -15,9 +15,11 @@ class EmployeeVisitDialog : public QDialog
 public:
     explicit EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, QWidget *parent = 0);
     ~EmployeeVisitDialog();
-    
+
 private slots:
-    void on_emplCombo_editTextChanged(const QString &arg1);
+    void on_emplLineEdit_textChanged(const QString &arg1);
+
+    void on_emplListView_pressed(const QModelIndex &index);
 
 private:
     Ui::EmployeeVisitDialog *ui;
