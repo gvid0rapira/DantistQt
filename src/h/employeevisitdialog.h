@@ -21,6 +21,8 @@ private slots:
 
     void on_emplListView_pressed(const QModelIndex &index);
 
+    void on_buttonBox_accepted();
+
 private:
     Ui::EmployeeVisitDialog *ui;
 

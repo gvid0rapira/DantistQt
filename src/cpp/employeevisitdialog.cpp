@@ -2,6 +2,8 @@
 #include "ui_employeevisitdialog.h"
 #include "src/h/db/dbstructure.h"
 
+#include <QMessageBox>
+
 EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::EmployeeVisitDialog)
@@ -30,6 +32,16 @@ void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
 }
 
 void EmployeeVisitDialog::on_emplListView_pressed(const QModelIndex &index)
+{
+    /* QMessageBox msgBox;
+    msgBox.setText(QObject::tr("%1, %2, %3").arg(QString::number( index.row() ),
+                                                 QString::number( index.column() ), index.data().toString()));
+
+    msgBox.exec();*/
+    ui->emplLineEdit->setText(index.data().toString());
+}
+
+void EmployeeVisitDialog::on_buttonBox_accepted()
 {
 
 }
