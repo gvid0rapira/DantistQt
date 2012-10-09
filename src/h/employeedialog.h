@@ -10,15 +10,6 @@
 #include <QDataWidgetMapper>
 
 
-enum{
-    Employee_Id = 0,
-    Employee_Lname = 1,
-    Employee_Fname = 2,
-    Employee_Mname = 3,
-    Employee_TabNumber = 4,
-    Employee_Dep = 5
-};
-
 class EmployeeDialog : public QDialog
 {
     Q_OBJECT

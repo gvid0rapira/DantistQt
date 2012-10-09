@@ -23,15 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenus();
     createToolBars();
 
-    enum {
-        Employee_Id = 0,
-        Employee_Lname = 1,
-        Employee_Fname = 2,
-        Employee_Mname = 3,
-        Employee_Tab_Num = 4,
-        Employee_Work_Place = 5
-    };
-
     employeeLstModel = new QSqlTableModel(this);
     employeeLstModel->setTable("employee");
     employeeLstModel->select();
@@ -92,6 +83,8 @@ void MainWindow::addEmployee()
 {
     if(!employeeDlg){
         employeeDlg = new EmployeeDialog(-1, employeeLstModel, this);
+    } else {
+        employeeDlg->rowToEdit(-1);
     }
     employeeDlg->show();
     employeeDlg->raise();
@@ -122,17 +115,39 @@ void MainWindow::delEmployee()
     employeeLstModel->submitAll();
 }
 
-void MainWindow::addEmployeeVisit(){
+void MainWindow::addEmployeeVisit()
+{
     if(!employeeVisitDlg){
         employeeVisitDlg = new EmployeeVisitDialog(-1, employeeVisitLstModel, this);
+    } else {
+        employeeVisitDlg->rowToEdit(-1);
     }
     employeeVisitDlg->show();
     employeeVisitDlg->raise();
     employeeVisitDlg->activateWindow();
 }
 
-void MainWindow::editEmployeeVisit(){}
-void MainWindow::delEmployeeVisit(){}
+void MainWindow::editEmployeeVisit()
+{
+    QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
+    QModelIndex index = list.first();
+    int row = index.row();
+    if(!employeeVisitDlg){
+        employeeVisitDlg = new EmployeeVisitDialog(row, employeeVisitLstModel, this);
+    } else {
+        employeeVisitDlg->rowToEdit(row);
+    }
+    employeeVisitDlg->show();
+    employeeVisitDlg->raise();
+    employeeVisitDlg->activateWindow();
+}
+void MainWindow::delEmployeeVisit(){
+    QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
+    QModelIndex index = list.first();
+    int row = index.row();
+    employeeVisitLstModel->removeRow(row);
+    employeeVisitLstModel->submitAll();
+}
 
 void MainWindow::createActions()
 {

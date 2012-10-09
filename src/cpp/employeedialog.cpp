@@ -1,6 +1,7 @@
 #include <src/h/employeedialog.h>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <src/h/db/dbstructure.h>
 
 
 EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
@@ -59,13 +60,13 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
 
     //--*- Отображение модели данных на виджеты
     mapper = new QDataWidgetMapper(this);
-    mapper->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
+    mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
     mapper->setModel(model);
     mapper->addMapping(lnameEdit, Employee_Lname);
     mapper->addMapping(fnameEdit, Employee_Fname);
     mapper->addMapping(mnameEdit, Employee_Mname);
-    mapper->addMapping(depEdit, Employee_Dep);
-    mapper->addMapping(tabNumEdit, Employee_TabNumber);
+    mapper->addMapping(depEdit, Employee_Work_Place);
+    mapper->addMapping(tabNumEdit, Employee_Tab_Num);
 
     if(row != -1)
     {
@@ -86,11 +87,17 @@ EmployeeDialog::~EmployeeDialog()
 
 void EmployeeDialog::acceptInput()
 {
+    mapper->submit();
     model->submitAll();
     this->hide();
 }
 
 void EmployeeDialog::rowToEdit(int row)
 {
-    mapper->setCurrentIndex(row);
+    if(row == -1){
+        //TODO: Обработать случай добавления сотрудника.
+    } else {
+         mapper->setCurrentIndex(row);
+    }
+
 }
