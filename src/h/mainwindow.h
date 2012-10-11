@@ -9,6 +9,7 @@
 #include <QSqlRelationalTableModel>
 #include <QTableView>
 #include <QStackedWidget>
+#include <QAxObject>
 
 #include <src/h/employeedialog.h>
 #include <src/h/employeevisitdialog.h>
@@ -31,6 +32,11 @@ private slots:
     void showVisits();
     void showEmployees();
 
+    void showReportSimple();
+    void makeReportSimple();
+    void showReportAccounting();
+    void makeReportAccounting();
+
     void addEmployee();
     void editEmployee();
     void delEmployee();
@@ -44,6 +50,8 @@ private:
     void createMenus();
     void createToolBars();
 
+    void drawRowRegister(QAxObject &sheet, int row); // Рисование гнаниц ячеек отчета "Реестр"
+
 private:
     Ui::MainWindow *ui;
 
@@ -54,6 +62,16 @@ private:
     // Модель и вид для списка сотрудников
     QSqlTableModel *employeeLstModel;
     QTableView  *employeeLstView;
+
+    QWidget *reportSimplePanel;        // Панель простого отчета
+    QLabel *repSimpleTitleLbl;
+    QLabel *repSimpleFromLbl;
+    QDateTimeEdit *repSimpleFromDTEdit;
+    QLabel *repSimpleToLbl;
+    QDateTimeEdit *repSimpleToDTEdit;
+    QPushButton   *repSimpleMakeBtn;
+
+    QWidget *reportForAccountingPanel; // Панель отчета для бухгалтерии
 
     QStackedWidget *stackedWidget;
 
@@ -69,6 +87,8 @@ private:
     QAction *exitAction;
     QAction *showVisitsAction;
     QAction *showEmployeesAction;
+    QAction *reportSimpleAction;
+    QAction *reportForAccountingAction;
     QAction *aboutAction;
 
     QAction *addEmployeeAction;

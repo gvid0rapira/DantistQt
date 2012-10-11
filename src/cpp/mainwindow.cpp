@@ -4,9 +4,15 @@
 
 #include <QtSql>
 #include <QIcon>
+#include <QGridLayout>
+#include <QDateTimeEdit>
 
 #include <QModelIndexList>
 #include <QModelIndex>
+
+#include <QFile>
+
+#include <QAxObject>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -23,14 +29,23 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenus();
     createToolBars();
 
+    // Панель списка сотрудников
     employeeLstModel = new QSqlTableModel(this);
     employeeLstModel->setTable("employee");
+    employeeLstModel->setHeaderData(Employee_Lname, Qt::Horizontal, tr("Фамилия"));
+    employeeLstModel->setHeaderData(Employee_Fname, Qt::Horizontal, tr("Имя"));
+    employeeLstModel->setHeaderData(Employee_Mname, Qt::Horizontal, tr("Отчество"));
+    employeeLstModel->setHeaderData(Employee_Tab_Num, Qt::Horizontal, tr("Таб. №"));
+    employeeLstModel->setHeaderData(Employee_Work_Place, Qt::Horizontal,
+                                    tr("Подразделение"));
     employeeLstModel->select();
 
     employeeLstView = new QTableView;
     employeeLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
     employeeLstView->setModel(employeeLstModel);
+    employeeLstView->setColumnHidden(Employee_Id, true);
 
+    // Панель списка визитов
     employeeVisitLstModel = new QSqlRelationalTableModel(this);
     employeeVisitLstModel->setTable("visit");
     employeeVisitLstModel->setRelation(Visit_Employee_Id,
@@ -41,9 +56,38 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeVisitLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
     employeeVisitLstView->setModel(employeeVisitLstModel);
 
+    // Панель простого отчета
+    reportSimplePanel   = new QWidget();
+    repSimpleTitleLbl   = new QLabel(tr("Простой отчет"), this);
+    repSimpleFromLbl    = new QLabel(tr("с"), this);
+    repSimpleFromDTEdit = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repSimpleToLbl      = new QLabel(tr("по"), this);
+    repSimpleToDTEdit   = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repSimpleMakeBtn    = new QPushButton(tr("Сформировать"));
+    repSimpleMakeBtn->setMaximumWidth(100);
+    connect(repSimpleMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportSimple()));
+
+
+    QGridLayout *repSimpleMainLayout = new QGridLayout;
+    repSimpleMainLayout->addWidget(repSimpleTitleLbl, 0, 0, 1, 3, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleFromLbl, 1, 0, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleFromDTEdit, 1, 1, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleToLbl, 2, 0, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleToDTEdit, 2, 1, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleMakeBtn, 1, 2, 1, 2, Qt::AlignTop);
+
+
+    repSimpleMainLayout->setRowStretch(2, 500);
+    repSimpleMainLayout->setColumnStretch(2, 500);
+
+    reportSimplePanel->setLayout(repSimpleMainLayout);
+
+    // Панель отчета для бухгалтерии
+
     stackedWidget = new QStackedWidget;
     stackedWidget->addWidget(employeeLstView);
     stackedWidget->addWidget(employeeVisitLstView);
+    stackedWidget->addWidget(reportSimplePanel);
 
     stackedWidget->setCurrentIndex(1);
 
@@ -78,6 +122,147 @@ void MainWindow::showEmployees()
     employeeToolBar->show();
     stackedWidget->setCurrentIndex(0);
 }
+
+void MainWindow::showReportSimple()
+{
+    stackedWidget->setCurrentIndex(2);
+}
+
+void MainWindow::makeReportSimple()
+{
+    QDateTime from = repSimpleFromDTEdit->dateTime();
+    QDateTime to   = repSimpleToDTEdit->dateTime();
+
+    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_time ")
+            + QString("FROM employee e, visit v ")
+            + QString("WHERE (datetime(v.visit_time) BETWEEN datetime('%1') AND datetime('%2'))")
+                .arg(from.toString("yyyy-MM-dd hh:mm"))
+                .arg(to.toString("yyyy-MM-dd hh:mm"))
+            + QString(" AND  v.employee_id = e.id");
+    qDebug() << sql;
+    QSqlQuery query(sql);
+    if(query.isActive()) {
+        query.finish();
+    }
+    query.exec();
+
+
+    // Создание файла отчета из шаблона
+    QString tmplFileName("d:\\Projects\\Work\\DantistQt\\templates\\register.xlsx");
+    QString regFileName(QString("d:\\Projects\\Work\\DantistQt\\reports\\register_%1.xlsx")
+                        .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
+    QFile templateFile(tmplFileName);
+    templateFile.copy(regFileName);
+
+    QAxObject *excel = new QAxObject( "Excel.Application", 0 );
+    excel->setProperty("Visible", true);
+
+    QAxObject *workbooks = excel->querySubObject( "WorkBooks" );
+    QAxObject *workbook  = workbooks->querySubObject(//"Add");
+                "Open(const QString&", regFileName);
+
+    // QAxObject *sheets = workbook->querySubObject( "Worksheets" );
+    QAxObject *sheet = workbook->querySubObject("Worksheets(Int)", 1);
+    // Запись периода отчета в отчет
+    sheet->querySubObject("Cells(Int, Int)", 4, 2 )
+            ->setProperty("Value", QVariant(QString(tr("За период с "))
+                                            + from.toString("dd.MM.yyyy")
+                                            + QString(tr(" по "))
+                                            + to.toString("dd.MM.yyyy")));
+
+    int startRow = 7;
+    int count = 0;
+    while( query.next() ) {
+        QString lname = query.value(0).toString();
+        QString fname = query.value(1).toString();
+        QString mname = query.value(2).toString();
+        QDateTime visitTime = query.value(3).toDateTime();
+        qDebug() << lname << fname << mname;
+        count++;
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 1 )
+                ->setProperty("Value", QVariant(count));
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 2 )
+                ->setProperty("Value", QVariant(lname + " " + fname + " " + mname));
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 4 )
+                ->setProperty("Value", QVariant(visitTime));
+
+        // Рисование границ
+        drawRowRegister(*sheet, startRow + count);
+    }
+
+    sheet->querySubObject("Cells(Int, Int)", startRow + count + 2, 2 )
+            ->setProperty("Value", QVariant(tr("Исп. Панкратова А.В.")));
+    sheet->querySubObject("Cells(Int, Int)", startRow + count + 3, 2 )
+            ->setProperty("Value", QVariant(tr("Тел. 47-5-25")));
+
+    QAxObject *cell = sheet->querySubObject("Cells(Int, Int)", 3, 2 );
+    QVariant cellValue = cell->dynamicCall("value");
+    cell->dynamicCall("Value");
+    qDebug() << cellValue;
+
+
+    workbook->dynamicCall("Save()");
+    //    excel->dynamicCall("Quit()");
+
+}
+
+void MainWindow::drawRowRegister(QAxObject &sheet, int row)
+{
+    sheet.querySubObject("Cells(Int, Int)", row, 1 )
+            ->querySubObject("Borders(Int)", 7)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 1 )
+            ->querySubObject("Borders(Int)", 9)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 1 )
+            ->querySubObject("Borders(Int)", 10)
+            ->setProperty("LineStyle", 1);
+
+    sheet.querySubObject("Cells(Int, Int)", row, 2 )
+            ->querySubObject("Borders(Int)", 7)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 2 )
+            ->querySubObject("Borders(Int)", 9)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 2 )
+            ->querySubObject("Borders(Int)", 10)
+            ->setProperty("LineStyle", 1);
+
+    sheet.querySubObject("Cells(Int, Int)", row, 3 )
+            ->querySubObject("Borders(Int)", 7)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 3 )
+            ->querySubObject("Borders(Int)", 9)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 3 )
+            ->querySubObject("Borders(Int)", 10)
+            ->setProperty("LineStyle", 1);
+
+    sheet.querySubObject("Cells(Int, Int)", row, 4 )
+            ->querySubObject("Borders(Int)", 7)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 4 )
+            ->querySubObject("Borders(Int)", 9)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 4 )
+            ->querySubObject("Borders(Int)", 10)
+            ->setProperty("LineStyle", 1);
+
+    sheet.querySubObject("Cells(Int, Int)", row, 5 )
+            ->querySubObject("Borders(Int)", 7)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 5 )
+            ->querySubObject("Borders(Int)", 9)
+            ->setProperty("LineStyle", 1);
+    sheet.querySubObject("Cells(Int, Int)", row, 5 )
+            ->querySubObject("Borders(Int)", 10)
+            ->setProperty("LineStyle", 1);
+}
+
+
+void MainWindow::showReportAccounting(){}
+
+void MainWindow::makeReportAccounting(){}
 
 void MainWindow::addEmployee()
 {
@@ -163,6 +348,11 @@ void MainWindow::createActions()
     showEmployeesAction = new QAction(tr("Сотрудники"), this);
     connect(showEmployeesAction, SIGNAL(triggered()), this, SLOT(showEmployees()));
 
+    reportSimpleAction = new QAction(tr("Простой"), this);
+    connect(reportSimpleAction, SIGNAL(triggered()), this, SLOT(showReportSimple()));
+
+    reportForAccountingAction = new QAction(tr("Для бухгалтерии"), this);
+
     addEmployeeAction = new QAction(tr("Добавить сотрудника"), this);
     addEmployeeAction->setIcon(QIcon(":/images/add_file.png"));
     addEmployeeAction->setToolTip(tr("Добавить сотрудника"));
@@ -203,6 +393,11 @@ void MainWindow::createMenus()
     listsMenu->addAction(showVisitsAction);
     listsMenu->addAction(showEmployeesAction);
 
+    reportsMenu = menuBar()->addMenu(tr("Отчеты"));
+    reportsMenu->addAction(reportSimpleAction);
+    reportsMenu->addAction(reportForAccountingAction);
+
+
     helpMenu = menuBar()->addMenu(tr("Помощь"));
     helpMenu->addAction(aboutAction);
 
@@ -222,3 +417,4 @@ void MainWindow::createToolBars()
     employeeVisitToolBar->addAction(delEmployeeVisitAction);
 
 }
+
