@@ -50,7 +50,7 @@ private:
     void createMenus();
     void createToolBars();
 
-    void drawRowRegister(QAxObject &sheet, int row); // –исование гнаниц €чеек отчета "–еестр"
+    void drawCellBorders(QAxObject &sheet, int row, int colCount); // –исование гнаниц €чеек отчета
 
 private:
     Ui::MainWindow *ui;
@@ -71,7 +71,13 @@ private:
     QDateTimeEdit *repSimpleToDTEdit;
     QPushButton   *repSimpleMakeBtn;
 
-    QWidget *reportForAccountingPanel; // ѕанель отчета дл€ бухгалтерии
+    QWidget *repAccPanel; // ѕанель отчета дл€ бухгалтерии
+    QLabel *repAccTitleLbl;
+    QLabel *repAccFromLbl;
+    QDateTimeEdit *repAccFromDTEdit;
+    QLabel *repAccToLbl;
+    QDateTimeEdit *repAccToDTEdit;
+    QPushButton *repAccMakeBtn;
 
     QStackedWidget *stackedWidget;
 

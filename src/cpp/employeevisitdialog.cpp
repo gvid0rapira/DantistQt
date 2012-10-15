@@ -12,14 +12,16 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, Q
     model = m;
 
     relationModel = model->relationModel(Visit_Employee_Id);
+    relationModel->setFilter("id = -1");
     // relationModel->setFilter("id = -1");
     // TODO: обрабатывать row при формировании модели списка сотрудников
 
     ui->emplListView->setModel(relationModel);
     ui->emplListView->setModelColumn(relationModel->fieldIndex("lname"));
 
+    ui->visitTimeDTEdit->setDateTime(QDateTime::currentDateTime());
     //--*- Отображение модели данных на виджеты
-    mapper = new QDataWidgetMapper(this);
+    /*mapper = new QDataWidgetMapper(this);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
     mapper->setModel(model);
     mapper->setItemDelegate(new QSqlRelationalDelegate(this));
@@ -35,7 +37,7 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, Q
         row = mapper->currentIndex();
         model->insertRow(row);
         mapper->setCurrentIndex(row);
-    }
+    }*/
 }
 
 EmployeeVisitDialog::~EmployeeVisitDialog()
@@ -45,7 +47,10 @@ EmployeeVisitDialog::~EmployeeVisitDialog()
 
 void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
 {
-    relationModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
+    if(arg1 != "")
+        relationModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
+    else
+        relationModel->setFilter("id = -1");
 
 }
 
