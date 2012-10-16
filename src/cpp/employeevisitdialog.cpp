@@ -11,13 +11,18 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, Q
     ui->setupUi(this);
     model = m;
 
-    relationModel = model->relationModel(Visit_Employee_Id);
-    relationModel->setFilter("id = -1");
+    emplLstModel = new QSqlQueryModel();
+    emplLstModel->setQuery(QString("SELECT id,")
+                         + QString("lname || ' ' || fname || ' ' || mname || ', ' || tab_num ")
+                         + QString("FROM employee ")
+                         + QString("WHERE id = -1")
+                         );
+    // emplLstModel->setFilter("id = -1");
     // relationModel->setFilter("id = -1");
     // TODO: обрабатывать row при формировании модели списка сотрудников
 
-    ui->emplListView->setModel(relationModel);
-    ui->emplListView->setModelColumn(relationModel->fieldIndex("lname"));
+    ui->emplListView->setModel(emplLstModel);
+    ui->emplListView->setModelColumn(1);
 
     ui->visitTimeDTEdit->setDateTime(QDateTime::currentDateTime());
     //--*- Отображение модели данных на виджеты
@@ -47,11 +52,18 @@ EmployeeVisitDialog::~EmployeeVisitDialog()
 
 void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
 {
-    if(arg1 != "")
-        relationModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
-    else
-        relationModel->setFilter("id = -1");
-
+    if(arg1 != "") {
+        // emplLstModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
+        emplLstModel->setQuery(QString("SELECT id,")
+                             + QString("tab_num || ', ' || lname || ' ' || fname || ' ' || mname ")
+                             + QString("FROM employee ")
+                               + tr("WHERE lname LIKE '%1\%'").arg(arg1));
+    } else {
+        emplLstModel->setQuery(QString("SELECT id,")
+                             + QString("lname || ' ' || fname || ' ' || mname || ', ' || tab_num ")
+                             + QString("FROM employee ")
+                               + QString("WHERE id = -1"));
+    }
 }
 
 void EmployeeVisitDialog::on_emplListView_pressed(const QModelIndex &index)
@@ -62,7 +74,7 @@ void EmployeeVisitDialog::on_emplListView_pressed(const QModelIndex &index)
 void EmployeeVisitDialog::on_buttonBox_accepted()
 {
     int row = ui->emplListView->currentIndex().row();
-    int employeeId = relationModel->index(row, 0).data().toInt();
+    int employeeId = emplLstModel->index(row, 0).data().toInt();
 
     QDateTime time = ui->visitTimeDTEdit->dateTime();
     QSqlQuery query;

@@ -6,6 +6,7 @@
 #include <QIcon>
 #include <QGridLayout>
 #include <QDateTimeEdit>
+#include <QMessageBox>
 
 #include <QModelIndexList>
 #include <QModelIndex>
@@ -178,10 +179,13 @@ void MainWindow::makeReportSimple()
     }
     query.exec();
 
-
-    // Создание файла отчета из шаблона
-    QString tmplFileName("d:\\projects\\private\\DantistQt\\templates\\register.xlsx");
-    QString regFileName(QString("d:\\projects\\private\\DantistQt\\reports\\register_%1.xlsx")
+    // Создание файла от чета из шаблона
+    QString tmplFileName(QString("%1\\..\\DantistQt\\templates\\register.xlsx")
+                             //"%1\\templates\\register.xlsx")
+                         .arg(QDir::currentPath()));
+    QString regFileName(QString("%1\\..\\DantistQt\\reports\\register_%2.xlsx")
+                            //"%1\\reports\\register_%2.xlsx")
+                        .arg(QDir::currentPath())
                         .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
     templateFile.copy(regFileName);
@@ -264,9 +268,13 @@ void MainWindow::makeReportAccounting(){
     }
 
     // Создание файла отчета из шаблона
-    QString tmplFileName("d:\\projects\\private\\DantistQt\\templates\\accounting_report.xlsx");
-    QString accRepFileName(QString("d:\\projects\\private\\DantistQt\\reports\\accounting_report_%1.xlsx")
-                        .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
+    QString tmplFileName(QString("%1\\..\\DantistQt\\templates\\accounting_report.xlsx")
+                             // "%1\\templates\\accounting_report.xlsx")
+                         .arg(QDir::currentPath()));
+    QString accRepFileName(QString("%1\\..\\DantistQt\\reports\\accounting_report_%2.xlsx")
+                               //"%1\\reports\\accounting_report_%2.xlsx")
+                         .arg(QDir::currentPath())
+                         .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
     templateFile.copy(accRepFileName);
 
@@ -290,6 +298,8 @@ void MainWindow::makeReportAccounting(){
 
     int startRow = 12;
     int rowCount = 0;
+    int allVisits = 0;
+    int totalSpent =0;
     while( query.next() ) {
         QString lname = query.value(0).toString();
         QString fname = query.value(1).toString();
@@ -297,7 +307,10 @@ void MainWindow::makeReportAccounting(){
         int tab_num   = query.value(3).toInt();
         QString work_place = query.value(4).toString();
         int visit_count = query.value(6).toInt();
+        allVisits += visit_count;
         int sum_spent = query.value(7).toInt();
+        totalSpent += sum_spent;
+
         qDebug() << lname << " " << fname << " " << mname << ", "
                  << tab_num << ", " << work_place << ", " << visit_count << ", " << sum_spent;
 
@@ -318,19 +331,29 @@ void MainWindow::makeReportAccounting(){
     }
 
     // Подошва отчета
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 2 )
+    drawCellBorders(*sheet, startRow + rowCount + 1, 7);
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 2 )
             ->setProperty("HorizontalAlignment", -4152);
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 2 )
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 2 )
+            ->setProperty("Value", QVariant(tr("Итого:")));
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 5 )
+            ->setProperty("Value", allVisits);
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 6 )
+            ->setProperty("Value", totalSpent);
+
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 2 )
+            ->setProperty("HorizontalAlignment", -4152);
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 2 )
             ->setProperty("Value", QVariant(tr("Зубной врач")));
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 6 )
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 6 )
             ->setProperty("Value", QVariant(tr("Панкратова А.В.")));
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 3 )
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 3 )
             ->querySubObject("Borders(Int)", 9)
             ->setProperty("LineStyle", 1);
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 4 )
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 4 )
             ->querySubObject("Borders(Int)", 9)
             ->setProperty("LineStyle", 1);
-    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 2, 5 )
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 5 )
             ->querySubObject("Borders(Int)", 9)
             ->setProperty("LineStyle", 1);
 

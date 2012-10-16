@@ -87,7 +87,7 @@ EmployeeDialog::~EmployeeDialog()
 
 void EmployeeDialog::acceptInput()
 {
-    mapper->submit();
+    if(!mapper->submit()) {}
     model->submitAll();
     this->hide();
 }
@@ -95,7 +95,10 @@ void EmployeeDialog::acceptInput()
 void EmployeeDialog::rowToEdit(int row)
 {
     if(row == -1){
-        //TODO: Обработать случай добавления сотрудника.
+        mapper->toLast();
+        int row = mapper->currentIndex();
+        model->insertRow(row);
+        mapper->setCurrentIndex(row);
     } else {
          mapper->setCurrentIndex(row);
     }

@@ -3,7 +3,6 @@
 # Project created by QtCreator 2012-05-20T18:11:32
 #
 #-------------------------------------------------
-
 CONFIG   += qaxcontainer
 QT       += core gui\
             sql

@@ -32,7 +32,7 @@ private:
     Ui::EmployeeVisitDialog *ui;
 
     QSqlRelationalTableModel *model;
-    QSqlTableModel *relationModel;
+    QSqlQueryModel *emplLstModel;
     QDataWidgetMapper *mapper;
 };
 
