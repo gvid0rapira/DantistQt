@@ -25,6 +25,14 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    static QString getEmplVisitSql() {
+
+
+        return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_time ")
+                + QString("FROM employee e, visit v ")
+                + QString("WHERE v.employee_id = e.id");
+    }
     
 private slots:
     void exit();
@@ -56,7 +64,7 @@ private:
     Ui::MainWindow *ui;
 
     // Модель и вид для списка визитов
-    QSqlRelationalTableModel *employeeVisitLstModel;
+    QSqlQueryModel *employeeVisitLstModel;
     QTableView  *employeeVisitLstView;
 
     // Модель и вид для списка сотрудников

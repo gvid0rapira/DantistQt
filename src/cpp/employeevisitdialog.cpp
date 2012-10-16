@@ -2,9 +2,11 @@
 #include "ui_employeevisitdialog.h"
 #include "src/h/db/dbstructure.h"
 
+#include "src/h/mainwindow.h"
+
 #include <QMessageBox>
 
-EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, QWidget *parent) :
+EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::EmployeeVisitDialog)
 {
@@ -99,7 +101,7 @@ void EmployeeVisitDialog::on_buttonBox_accepted()
 
     }
     // Обновим модель
-    model->select();
+    model->setQuery(MainWindow::getEmplVisitSql());
     this->hide();
 }
 

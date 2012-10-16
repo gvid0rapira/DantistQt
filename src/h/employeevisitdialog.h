@@ -14,7 +14,7 @@ class EmployeeVisitDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit EmployeeVisitDialog(int row, QSqlRelationalTableModel *m, QWidget *parent = 0);
+    explicit EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *parent = 0);
     ~EmployeeVisitDialog();
     /**
      * ”казание строки модели данных дл€ редактировани€.
@@ -31,7 +31,7 @@ private slots:
 private:
     Ui::EmployeeVisitDialog *ui;
 
-    QSqlRelationalTableModel *model;
+    QSqlQueryModel *model;
     QSqlQueryModel *emplLstModel;
     QDataWidgetMapper *mapper;
 };

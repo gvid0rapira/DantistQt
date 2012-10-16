@@ -48,20 +48,28 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeLstView->resizeColumnsToContents();
 
     // Панель списка визитов
-    employeeVisitLstModel = new QSqlRelationalTableModel(this);
-    employeeVisitLstModel->setTable("visit");
-    employeeVisitLstModel->setRelation(Visit_Employee_Id,
-                                       QSqlRelation("employee", "id", "lname"));
-    employeeVisitLstModel->setHeaderData(Visit_Employee_Id, Qt::Horizontal,
+    employeeVisitLstModel = new QSqlQueryModel(this);
+    /*visitLstSql =
+                 QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_time ")
+               + QString("FROM employee e, visit v ")
+               + QString("WHERE v.employee_id = e.id");*/
+    employeeVisitLstModel->setQuery(getEmplVisitSql());
+
+    employeeVisitLstModel->setHeaderData(1, Qt::Horizontal,
                                          tr("Фамилия"));
-    employeeVisitLstModel->setHeaderData(Visit_Time, Qt::Horizontal,
+    employeeVisitLstModel->setHeaderData(2, Qt::Horizontal,
+                                         tr("Имя"));
+    employeeVisitLstModel->setHeaderData(3, Qt::Horizontal,
+                                         tr("Отчество"));
+    employeeVisitLstModel->setHeaderData(4, Qt::Horizontal,
+                                         tr("Таб. №"));
+    employeeVisitLstModel->setHeaderData(5, Qt::Horizontal,
                                          tr("Время посещения"));
-    employeeVisitLstModel->select();
 
     employeeVisitLstView = new QTableView;
     employeeVisitLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
     employeeVisitLstView->setModel(employeeVisitLstModel);
-    employeeVisitLstView->setColumnHidden(Visit_Id, true);
+    employeeVisitLstView->setColumnHidden(0, true);
     employeeVisitLstView->resizeColumnsToContents();
 
     // Панель простого отчета
@@ -443,8 +451,12 @@ void MainWindow::delEmployeeVisit(){
     QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
     QModelIndex index = list.first();
     int row = index.row();
+    int selectId = employeeVisitLstModel->index(row, 0).data().toInt();
     employeeVisitLstModel->removeRow(row);
-    employeeVisitLstModel->submitAll();
+    QString sql = QString("DELETE FROM visit WHERE id = %1").arg(selectId);
+    QSqlQuery qury(sql);
+
+    employeeVisitLstModel->setQuery(getEmplVisitSql());
 }
 
 void MainWindow::createActions()
