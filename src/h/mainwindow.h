@@ -53,6 +53,8 @@ private slots:
     void editEmployeeVisit();
     void delEmployeeVisit();
 
+    void importEmplCSV();
+
 private:
     void createActions();
     void createMenus();
@@ -93,6 +95,7 @@ private:
     QMenu *helpMenu;
     QMenu *listsMenu;
     QMenu *reportsMenu;
+    QMenu *systemMenu;
 
     QToolBar *mainToolBar;
     QToolBar *employeeToolBar;
@@ -104,6 +107,7 @@ private:
     QAction *reportSimpleAction;
     QAction *reportForAccountingAction;
     QAction *aboutAction;
+    QAction *importEmplCSVAction;
 
     QAction *addEmployeeAction;
     QAction *editEmployeeAction;

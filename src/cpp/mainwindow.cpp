@@ -12,8 +12,12 @@
 #include <QModelIndex>
 
 #include <QFile>
+#include <QFileDialog>
 
 #include <QAxObject>
+
+#include <string>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -189,10 +193,10 @@ void MainWindow::makeReportSimple()
 
     // Создание файла от чета из шаблона
     QString tmplFileName(QString("%1\\..\\DantistQt\\templates\\register.xlsx")
-                             //"%1\\templates\\register.xlsx")
+                             // "%1\\templates\\register.xlsx")
                          .arg(QDir::currentPath()));
     QString regFileName(QString("%1\\..\\DantistQt\\reports\\register_%2.xlsx")
-                            //"%1\\reports\\register_%2.xlsx")
+                            // "%1\\reports\\register_%2.xlsx")
                         .arg(QDir::currentPath())
                         .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
@@ -228,7 +232,7 @@ void MainWindow::makeReportSimple()
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 2 )
                 ->setProperty("Value", QVariant(lname + " " + fname + " " + mname));
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 4 )
-                ->setProperty("Value", QVariant(visitTime));
+                ->setProperty("Value", QVariant(visitTime.toString("dd.MM.yyyy")));
 
         // Рисование границ
         drawCellBorders(*sheet, startRow + count, 5);
@@ -276,11 +280,11 @@ void MainWindow::makeReportAccounting(){
     }
 
     // Создание файла отчета из шаблона
-    QString tmplFileName(QString("%1\\..\\DantistQt\\templates\\accounting_report.xlsx")
-                             // "%1\\templates\\accounting_report.xlsx")
+    QString tmplFileName(QString(// "%1\\..\\DantistQt\\templates\\accounting_report.xlsx")
+                             "%1\\templates\\accounting_report.xlsx")
                          .arg(QDir::currentPath()));
-    QString accRepFileName(QString("%1\\..\\DantistQt\\reports\\accounting_report_%2.xlsx")
-                               //"%1\\reports\\accounting_report_%2.xlsx")
+    QString accRepFileName(QString(// "%1\\..\\DantistQt\\reports\\accounting_report_%2.xlsx")
+                               "%1\\reports\\accounting_report_%2.xlsx")
                          .arg(QDir::currentPath())
                          .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
@@ -384,6 +388,60 @@ void MainWindow::drawCellBorders(QAxObject &sheet, int row, int colCount)
     }
 }
 
+void MainWindow::importEmplCSV()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+            tr("Открыть CSV файл"), QDir::currentPath(),
+                   tr("Файл CSV (разделитель точка с запятой) (*.csv)"));
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly)) {
+        std::cerr << tr("Ошибка открытия файла %1").arg(fileName).toStdString()
+                  << std::endl;
+        return;
+    }
+
+
+    QTextStream in(&file);
+    in.setCodec(QTextCodec::codecForName("Windows-1251"));
+    QSqlQuery delQuery("DELETE FROM employee");
+    delQuery.exec();
+    QSqlQuery insQuery;
+    insQuery.prepare(QString("INSERT INTO employee ")
+                  + QString("(lname, fname, mname, tab_num, work_place) ")
+                  + QString("VALUES ")
+                  + QString("(:lname, :fname, :mname, :tab_num, :work_place)"));
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        QStringList fields = line.split(';');
+        if (fields.size() >= 5) {
+            int tab_num = fields.takeFirst().toInt();
+            QString lname = fields.takeFirst().trimmed();
+            QString fname = fields.takeFirst().trimmed();
+            QString mname = fields.takeFirst().trimmed();
+            QString work_place = fields.takeFirst();
+            insQuery.bindValue(":lname", lname);
+            insQuery.bindValue(":fname", fname);
+            insQuery.bindValue(":mname", mname);
+            insQuery.bindValue(":tab_num", tab_num);
+            insQuery.bindValue(":work_place", work_place);
+            if(!insQuery.exec()){
+
+                qDebug() << "== Error ======================";
+                qDebug() << "Number:        " << insQuery.lastError().number();
+                qDebug() << "Type:          " << insQuery.lastError().type();
+                qDebug() << "Text:          " << insQuery.lastError().text();
+                qDebug() << "Datebase Text: " << insQuery.lastError().databaseText();
+
+
+            }
+
+        }
+    }
+    file.close();
+    QMessageBox msg(this);
+    msg.setText(tr("Импорт закончен."));
+    msg.exec();
+}
 
 void MainWindow::addEmployee()
 {
@@ -480,6 +538,9 @@ void MainWindow::createActions()
     connect(reportForAccountingAction, SIGNAL(triggered()),
             this, SLOT(showReportAccounting()));
 
+    importEmplCSVAction = new QAction(tr("Импорт сотрудников из CSV"), this);
+    connect(importEmplCSVAction, SIGNAL(triggered()), this, SLOT(importEmplCSV()));
+
     addEmployeeAction = new QAction(tr("Добавить сотрудника"), this);
     addEmployeeAction->setIcon(QIcon(":/images/add_file.png"));
     addEmployeeAction->setToolTip(tr("Добавить сотрудника"));
@@ -524,6 +585,8 @@ void MainWindow::createMenus()
     reportsMenu->addAction(reportSimpleAction);
     reportsMenu->addAction(reportForAccountingAction);
 
+    systemMenu = menuBar()->addMenu(tr("Системное"));
+    systemMenu->addAction(importEmplCSVAction);
 
     helpMenu = menuBar()->addMenu(tr("Помощь"));
     helpMenu->addAction(aboutAction);
