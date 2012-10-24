@@ -10,7 +10,7 @@ CREATE TABLE employee (
 CREATE TABLE visit (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   employee_id INTEGER,
-  visit_time INTEGER NOT NULL,
+  visit_date DATE NOT NULL,
   CONSTRAINT fk_visit_empl FOREIGN KEY (employee_id) REFERENCES employee(id)
     ON DELETE CASCADE
 );

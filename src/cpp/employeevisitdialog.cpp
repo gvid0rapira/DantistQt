@@ -10,41 +10,26 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *pa
     QDialog(parent),
     ui(new Ui::EmployeeVisitDialog)
 {
-    ui->setupUi(this);
     model = m;
+    ui->setupUi(this);
 
+    QRegExpValidator *nameValidator
+            = new QRegExpValidator(QRegExp(tr("[А-Я][а-я]{1,50}")) ,this);
+
+    ui->emplLineEdit->setValidator(nameValidator);
     emplLstModel = new QSqlQueryModel();
     emplLstModel->setQuery(QString("SELECT id,")
                          + QString("lname || ' ' || fname || ' ' || mname || ', ' || tab_num ")
                          + QString("FROM employee ")
                          + QString("WHERE id = -1")
                          );
-    // emplLstModel->setFilter("id = -1");
-    // relationModel->setFilter("id = -1");
-    // TODO: обрабатывать row при формировании модели списка сотрудников
+
 
     ui->emplListView->setModel(emplLstModel);
     ui->emplListView->setModelColumn(1);
 
-    ui->visitTimeDTEdit->setDateTime(QDateTime::currentDateTime());
-    //--*- Отображение модели данных на виджеты
-    /*mapper = new QDataWidgetMapper(this);
-    mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
-    mapper->setModel(model);
-    mapper->setItemDelegate(new QSqlRelationalDelegate(this));
-    mapper->addMapping(ui->emplListView, Visit_Employee_Id);
-    mapper->addMapping(ui->visitTimeDTEdit, Visit_Time);
-
-    if(row != -1) // Редактирование
-    {
-        mapper->setCurrentIndex(row);
-    } else {      // Добавление
-
-        mapper->toFirst();
-        row = mapper->currentIndex();
-        model->insertRow(row);
-        mapper->setCurrentIndex(row);
-    }*/
+    ui->visitDateDEdit->setDate(QDate::currentDate());
+    ui->emplLineEdit->setFocus();
 }
 
 EmployeeVisitDialog::~EmployeeVisitDialog()
@@ -55,11 +40,11 @@ EmployeeVisitDialog::~EmployeeVisitDialog()
 void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
 {
     if(arg1 != "") {
-        // emplLstModel->setFilter(tr("lname Like '%1\%'").arg(arg1));
+        QString tmplStr = arg1.left(1).toUpper() + arg1.right(arg1.length() - 1).toLower();
         emplLstModel->setQuery(QString("SELECT id,")
                              + QString("tab_num || ', ' || lname || ' ' || fname || ' ' || mname ")
                              + QString("FROM employee ")
-                               + tr("WHERE lname LIKE '%1\%'").arg(arg1));
+                               + tr("WHERE lname LIKE '%1\%'").arg(tmplStr));
     } else {
         emplLstModel->setQuery(QString("SELECT id,")
                              + QString("lname || ' ' || fname || ' ' || mname || ', ' || tab_num ")
@@ -73,18 +58,42 @@ void EmployeeVisitDialog::on_emplListView_pressed(const QModelIndex &index)
     // ui->emplLineEdit->setText(index.data().toString());
 }
 
-void EmployeeVisitDialog::on_buttonBox_accepted()
-{
-    int row = ui->emplListView->currentIndex().row();
-    int employeeId = emplLstModel->index(row, 0).data().toInt();
 
-    QDateTime time = ui->visitTimeDTEdit->dateTime();
+void EmployeeVisitDialog::rowToEdit(int row)
+{
+    if(row == -1){
+        //TODO: Обработать случай добавления визита.
+    } else {
+         mapper->setCurrentIndex(row);
+    }
+}
+
+void EmployeeVisitDialog::on_acceptBtn_clicked()
+{
+    QString errStr;
+
+    int row = ui->emplListView->currentIndex().row();
+    int employeeId = -1;
+    if(row > -1) {
+        employeeId = emplLstModel->index(row, 0).data().toInt();
+    } else {
+        errStr.append(tr("   * выбрать сотрудника.\n"));
+    }
+
+    if(errStr.length() != 0) {
+        errStr.insert(0, tr("Необходимо: \n"));
+        QMessageBox msgBox;
+        msgBox.setText(errStr);
+        msgBox.exec();
+        return;
+    }
+    QDate date = ui->visitDateDEdit->date();
     QSqlQuery query;
 
-    query.prepare(QString("INSERT INTO visit (employee_id, visit_time)")
-                  + QString("VALUES (:employee_id, :visit_time)"));
+    query.prepare(QString("INSERT INTO visit (employee_id, visit_date)")
+                  + QString("VALUES (:employee_id, :visit_date)"));
     query.bindValue(":employee_id", employeeId);
-    query.bindValue(":visit_time", time);
+    query.bindValue(":visit_date", date);
 
     if(!query.exec()){
         QMessageBox msgBox;
@@ -103,13 +112,10 @@ void EmployeeVisitDialog::on_buttonBox_accepted()
     // Обновим модель
     model->setQuery(MainWindow::getEmplVisitSql());
     this->hide();
+    return;
 }
 
-void EmployeeVisitDialog::rowToEdit(int row)
+void EmployeeVisitDialog::on_rejectBtn_clicked()
 {
-    if(row == -1){
-        //TODO: Обработать случай добавления визита.
-    } else {
-         mapper->setCurrentIndex(row);
-    }
+    this->hide();
 }

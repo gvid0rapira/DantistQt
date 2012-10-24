@@ -10,6 +10,7 @@
 #include <QTableView>
 #include <QStackedWidget>
 #include <QAxObject>
+#include <QDateEdit>
 
 #include <src/h/employeedialog.h>
 #include <src/h/employeevisitdialog.h>
@@ -29,7 +30,7 @@ public:
     static QString getEmplVisitSql() {
 
 
-        return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_time ")
+        return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_date ")
                 + QString("FROM employee e, visit v ")
                 + QString("WHERE v.employee_id = e.id");
     }
@@ -76,17 +77,17 @@ private:
     QWidget *reportSimplePanel;        // Панель простого отчета
     QLabel *repSimpleTitleLbl;
     QLabel *repSimpleFromLbl;
-    QDateTimeEdit *repSimpleFromDTEdit;
+    QDateEdit *repSimpleFromDEdit;
     QLabel *repSimpleToLbl;
-    QDateTimeEdit *repSimpleToDTEdit;
+    QDateEdit *repSimpleToDEdit;
     QPushButton   *repSimpleMakeBtn;
 
     QWidget *repAccPanel; // Панель отчета для бухгалтерии
     QLabel *repAccTitleLbl;
     QLabel *repAccFromLbl;
-    QDateTimeEdit *repAccFromDTEdit;
+    QDateEdit *repAccFromDEdit;
     QLabel *repAccToLbl;
-    QDateTimeEdit *repAccToDTEdit;
+    QDateEdit *repAccToDEdit;
     QPushButton *repAccMakeBtn;
 
     QStackedWidget *stackedWidget;

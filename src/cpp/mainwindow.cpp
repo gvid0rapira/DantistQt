@@ -5,7 +5,6 @@
 #include <QtSql>
 #include <QIcon>
 #include <QGridLayout>
-#include <QDateTimeEdit>
 #include <QMessageBox>
 
 #include <QModelIndexList>
@@ -16,7 +15,6 @@
 
 #include <QAxObject>
 
-#include <string>
 #include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -53,10 +51,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Панель списка визитов
     employeeVisitLstModel = new QSqlQueryModel(this);
-    /*visitLstSql =
-                 QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_time ")
-               + QString("FROM employee e, visit v ")
-               + QString("WHERE v.employee_id = e.id");*/
+
     employeeVisitLstModel->setQuery(getEmplVisitSql());
 
     employeeVisitLstModel->setHeaderData(1, Qt::Horizontal,
@@ -68,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeVisitLstModel->setHeaderData(4, Qt::Horizontal,
                                          tr("Таб. №"));
     employeeVisitLstModel->setHeaderData(5, Qt::Horizontal,
-                                         tr("Время посещения"));
+                                         tr("Дата посещения"));
 
     employeeVisitLstView = new QTableView;
     employeeVisitLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -80,9 +75,9 @@ MainWindow::MainWindow(QWidget *parent) :
     reportSimplePanel   = new QWidget();
     repSimpleTitleLbl   = new QLabel(tr("Реестр"), this);
     repSimpleFromLbl    = new QLabel(tr("с"), this);
-    repSimpleFromDTEdit = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repSimpleFromDEdit = new QDateEdit(QDate::currentDate(), this);
     repSimpleToLbl      = new QLabel(tr("по"), this);
-    repSimpleToDTEdit   = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repSimpleToDEdit   = new QDateEdit(QDate::currentDate(), this);
     repSimpleMakeBtn    = new QPushButton(tr("Сформировать"));
     repSimpleMakeBtn->setMaximumWidth(100);
     connect(repSimpleMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportSimple()));
@@ -91,9 +86,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *repSimpleMainLayout = new QGridLayout;
     repSimpleMainLayout->addWidget(repSimpleTitleLbl, 0, 0, 1, 3, Qt::AlignTop);
     repSimpleMainLayout->addWidget(repSimpleFromLbl, 1, 0, 1, 1, Qt::AlignTop);
-    repSimpleMainLayout->addWidget(repSimpleFromDTEdit, 1, 1, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleFromDEdit, 1, 1, 1, 1, Qt::AlignTop);
     repSimpleMainLayout->addWidget(repSimpleToLbl, 2, 0, 1, 1, Qt::AlignTop);
-    repSimpleMainLayout->addWidget(repSimpleToDTEdit, 2, 1, 1, 1, Qt::AlignTop);
+    repSimpleMainLayout->addWidget(repSimpleToDEdit, 2, 1, 1, 1, Qt::AlignTop);
     repSimpleMainLayout->addWidget(repSimpleMakeBtn, 1, 2, 1, 2, Qt::AlignTop);
 
 
@@ -106,9 +101,9 @@ MainWindow::MainWindow(QWidget *parent) :
     repAccPanel = new QWidget();
     repAccTitleLbl = new QLabel(tr("Отчет для бухгалтерии"), this);
     repAccFromLbl = new QLabel(tr("с"), this);
-    repAccToDTEdit = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repAccToDEdit = new QDateEdit(QDate::currentDate(), this);
     repAccToLbl = new QLabel(tr("по"), this);
-    repAccFromDTEdit = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    repAccFromDEdit = new QDateEdit(QDate::currentDate(), this);
     repAccMakeBtn =  new QPushButton(tr("Сформировать"));
     repAccMakeBtn->setMaximumWidth(100);
     connect(repAccMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportAccounting()));
@@ -116,9 +111,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *repAccMainLayout = new QGridLayout;
     repAccMainLayout->addWidget(repAccTitleLbl, 0, 0, 1, 3, Qt::AlignTop);
     repAccMainLayout->addWidget(repAccFromLbl, 1, 0, 1, 1, Qt::AlignTop);
-    repAccMainLayout->addWidget(repAccFromDTEdit, 1, 1, 1, 1, Qt::AlignTop);
+    repAccMainLayout->addWidget(repAccFromDEdit, 1, 1, 1, 1, Qt::AlignTop);
     repAccMainLayout->addWidget(repAccToLbl, 2, 0, 1, 1, Qt::AlignTop);
-    repAccMainLayout->addWidget(repAccToDTEdit, 2, 1, 1, 1, Qt::AlignTop);
+    repAccMainLayout->addWidget(repAccToDEdit, 2, 1, 1, 1, Qt::AlignTop);
     repAccMainLayout->addWidget(repAccMakeBtn, 1, 2, 1, 2, Qt::AlignTop);
 
     repAccMainLayout->setRowStretch(2, 500);
@@ -175,14 +170,14 @@ void MainWindow::showReportSimple()
 
 void MainWindow::makeReportSimple()
 {
-    QDateTime from = repSimpleFromDTEdit->dateTime();
-    QDateTime to   = repSimpleToDTEdit->dateTime();
+    QDate from = repSimpleFromDEdit->date();
+    QDate to   = repSimpleToDEdit->date();
 
-    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_time ")
+    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_date ")
             + QString("FROM employee e, visit v ")
-            + QString("WHERE (datetime(v.visit_time) BETWEEN datetime('%1') AND datetime('%2'))")
-                .arg(from.toString("yyyy-MM-dd hh:mm"))
-                .arg(to.toString("yyyy-MM-dd hh:mm"))
+            + QString("WHERE (date(v.visit_date) BETWEEN date('%1') AND date('%2'))")
+                .arg(from.toString("yyyy-MM-dd"))
+                .arg(to.toString("yyyy-MM-dd"))
             + QString(" AND  v.employee_id = e.id");
     qDebug() << sql;
     QSqlQuery query(sql);
@@ -192,12 +187,20 @@ void MainWindow::makeReportSimple()
     query.exec();
 
     // Создание файла от чета из шаблона
-    QString tmplFileName(QString("%1\\..\\DantistQt\\templates\\register.xlsx")
-                             // "%1\\templates\\register.xlsx")
-                         .arg(QDir::currentPath()));
-    QString regFileName(QString("%1\\..\\DantistQt\\reports\\register_%2.xlsx")
-                            // "%1\\reports\\register_%2.xlsx")
-                        .arg(QDir::currentPath())
+    QString tmplFileName(QString(
+                     #ifdef QT_DEBUG
+                         "%1\\..\\DantistQt\\templates\\register.xlsx"
+                     #else
+                         "%1\\templates\\register.xlsx"
+                     #endif
+                         ).arg(QDir::currentPath()));
+    QString regFileName(QString(
+                     #ifdef QT_DEBUG
+                        "%1\\..\\DantistQt\\reports\\register_%2.xlsx"
+                     #else
+                        "%1\\reports\\register_%2.xlsx"
+                     #endif
+                        ).arg(QDir::currentPath())
                         .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
     templateFile.copy(regFileName);
@@ -224,7 +227,7 @@ void MainWindow::makeReportSimple()
         QString lname = query.value(0).toString();
         QString fname = query.value(1).toString();
         QString mname = query.value(2).toString();
-        QDateTime visitTime = query.value(3).toDateTime();
+        QDate visiDate = query.value(3).toDate();
         qDebug() << lname << fname << mname;
         count++;
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 1 )
@@ -232,7 +235,7 @@ void MainWindow::makeReportSimple()
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 2 )
                 ->setProperty("Value", QVariant(lname + " " + fname + " " + mname));
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 4 )
-                ->setProperty("Value", QVariant(visitTime.toString("dd.MM.yyyy")));
+                ->setProperty("Value", QVariant(visiDate.toString("dd.MM.yyyy")));
 
         // Рисование границ
         drawCellBorders(*sheet, startRow + count, 5);
@@ -260,16 +263,16 @@ void MainWindow::showReportAccounting(){
     stackedWidget->setCurrentIndex(3);}
 
 void MainWindow::makeReportAccounting(){
-    QDateTime from = repAccFromDTEdit->dateTime();
-    QDateTime to   = repAccToDTEdit->dateTime();
+    QDate from = repAccFromDEdit->date();
+    QDate to   = repAccToDEdit->date();
 
     // TODO: вынести константу 250 в конфигурационный файл
     QString sql = QString("SELECT DISTINCT e.lname, e.fname, e.mname, e.tab_num, e.work_place, ")
-            + QString("v.visit_time, count(e.id), count(e.id)*250 ")
+            + QString("v.visit_date, count(e.id), count(e.id)*250 ")
             + QString("FROM employee e, visit v ")
-            + QString("WHERE (v.visit_time BETWEEN datetime('%1') AND datetime('%2')) ")
-                .arg(from.toString("yyyy-MM-dd hh:mm"))
-                .arg(to.toString("yyyy-MM-dd hh:mm"))
+            + QString("WHERE (v.visit_date BETWEEN date('%1') AND date('%2')) ")
+                .arg(from.toString("yyyy-MM-dd"))
+                .arg(to.toString("yyyy-MM-dd"))
             + QString("AND v.employee_id = e.id ")
             + QString("GROUP BY e.lname");
     qDebug() << sql;
@@ -280,13 +283,22 @@ void MainWindow::makeReportAccounting(){
     }
 
     // Создание файла отчета из шаблона
-    QString tmplFileName(QString(// "%1\\..\\DantistQt\\templates\\accounting_report.xlsx")
-                             "%1\\templates\\accounting_report.xlsx")
-                         .arg(QDir::currentPath()));
-    QString accRepFileName(QString(// "%1\\..\\DantistQt\\reports\\accounting_report_%2.xlsx")
-                               "%1\\reports\\accounting_report_%2.xlsx")
-                         .arg(QDir::currentPath())
-                         .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
+
+    QString tmplFileName(QString(
+                       #ifdef QT_DEBUG
+                           "%1\\..\\DantistQt\\templates\\accounting_report.xlsx"
+                       #else
+                           "%1\\templates\\accounting_report.xlsx"
+                       #endif
+                           ).arg(QDir::currentPath()));
+    QString accRepFileName(QString(
+                       #ifdef QT_DEBUG
+                           "%1\\..\\DantistQt\\reports\\accounting_report_%2.xlsx"
+                       #else
+                           "%1\\reports\\accounting_report_%2.xlsx"
+                       #endif
+                           ).arg(QDir::currentPath())
+                            .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmss")));
     QFile templateFile(tmplFileName);
     templateFile.copy(accRepFileName);
 
@@ -415,9 +427,12 @@ void MainWindow::importEmplCSV()
         QStringList fields = line.split(';');
         if (fields.size() >= 5) {
             int tab_num = fields.takeFirst().toInt();
-            QString lname = fields.takeFirst().trimmed();
-            QString fname = fields.takeFirst().trimmed();
-            QString mname = fields.takeFirst().trimmed();
+            QString lname = fields.takeFirst().trimmed().toLower();
+            lname = lname.left(1).toUpper() + lname.right(lname.length() - 1);
+            QString fname = fields.takeFirst().trimmed().toLower();
+            fname = fname.left(1).toUpper() + fname.right(fname.length() - 1);
+            QString mname = fields.takeFirst().trimmed().toLower();
+            mname = mname.left(1).toUpper() + mname.right(mname.length() - 1);
             QString work_place = fields.takeFirst();
             insQuery.bindValue(":lname", lname);
             insQuery.bindValue(":fname", fname);
@@ -544,6 +559,7 @@ void MainWindow::createActions()
     addEmployeeAction = new QAction(tr("Добавить сотрудника"), this);
     addEmployeeAction->setIcon(QIcon(":/images/add_file.png"));
     addEmployeeAction->setToolTip(tr("Добавить сотрудника"));
+    addEmployeeAction->setShortcut(QKeySequence(Qt::Key_Insert));
     connect(addEmployeeAction, SIGNAL(triggered()), this, SLOT(addEmployee()));
 
     editEmployeeAction = new QAction(tr("Редактировать сотрудника"), this);
@@ -559,6 +575,7 @@ void MainWindow::createActions()
     addEmployeeVisitAction = new QAction(tr("Добавить визит сотрудника"), this);
     addEmployeeVisitAction->setIcon(QIcon(":/images/add_file.png"));
     addEmployeeVisitAction->setToolTip(tr("Добавить визит сотрудника"));
+    addEmployeeVisitAction->setShortcut(QKeySequence(Qt::Key_Insert));
     connect(addEmployeeVisitAction, SIGNAL(triggered()), this, SLOT(addEmployeeVisit()));
 
     editEmployeeVisitAction = new QAction(tr("Редактировать визит сотрудника"), this);

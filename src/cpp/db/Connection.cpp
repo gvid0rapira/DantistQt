@@ -4,8 +4,15 @@
 QSqlDatabase Connection::getConnection()
 {
     QSqlDatabase sdb = QSqlDatabase::addDatabase("QSQLITE");
-    sdb.setDatabaseName("../DantistQt/DB/dantist.db");
-    // sdb.setDatabaseName("DB/dantist.db");
+    sdb.setDatabaseName(QObject::tr(
+                    #ifdef QT_DEBUG
+                        "%1\\..\\DantistQt\\DB\\dantist.db"
+                    #else
+                        "%1\\DB\\dantist.db"
+                    #endif
+                        ).arg(QDir::currentPath()));
+    //sdb.setDatabaseName(QObject::tr("%1\\DB\\dantist.db")
+      //.arg(QDir::currentPath()));
     if(!sdb.open()){
         QMessageBox msgBox;
         msgBox.setText(QObject::tr("Ошибка. Не установлено соединение с БД."));

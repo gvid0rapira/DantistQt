@@ -3,6 +3,8 @@
 #include <QHBoxLayout>
 #include <src/h/db/dbstructure.h>
 
+#include <QRegExpValidator>
+#include <QMessageBox>
 
 EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     : QDialog(parent)
@@ -10,20 +12,27 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     model = m;
 
     //--*- Формируем интерфейс
-    lnameLabel = new QLabel(tr("Фамилия:"));
-    lnameEdit = new QLineEdit;
+
+    QRegExpValidator *nameValidator
+            = new QRegExpValidator(QRegExp(tr("[А-Я][а-я]{1,50}")) ,this);
+    lnameLabel = new QLabel(tr("Фамилия:"), this);
+    lnameEdit = new QLineEdit(this);
+    lnameEdit->setValidator(nameValidator);
     lnameLabel->setBuddy(lnameEdit);
 
     fnameLabel = new QLabel(tr("Имя:"));
     fnameEdit = new QLineEdit;
+    fnameEdit->setValidator(nameValidator);
     fnameLabel->setBuddy(fnameEdit);
 
     mnameLabel = new QLabel(tr("Отчество:"));
     mnameEdit = new QLineEdit;
+    mnameEdit->setValidator(nameValidator);
     mnameLabel->setBuddy(mnameEdit);
 
     tabNumLabel = new QLabel(tr("Таб.№:"));
     tabNumEdit = new QLineEdit;
+    tabNumEdit->setValidator(new QIntValidator(0, 1000000, this));
     tabNumLabel->setBuddy(tabNumEdit);
 
     depLabel = new QLabel(tr("Подразделение:"));
@@ -87,9 +96,30 @@ EmployeeDialog::~EmployeeDialog()
 
 void EmployeeDialog::acceptInput()
 {
-    if(!mapper->submit()) {}
+    QString errStr;
+    if(lnameEdit->text().length() == 0)
+        errStr.append(tr("  * Фамилия\n"));
+    if(fnameEdit->text().length() == 0)
+        errStr.append(tr("  * Имя\n"));
+
+    if(tabNumEdit->text().length() == 0)
+        errStr.append(tr("  * Табельный номер\n"));
+    if(depEdit->text().length() == 0)
+        errStr.append(tr("  * Подразделение \n"));
+    if(errStr.length() != 0) {
+        errStr.insert(0, tr("Необходимо заполнить поля: \n"));
+        QMessageBox msgBox;
+        msgBox.setText(errStr);
+        msgBox.exec();
+        return;
+    }
+    if(!mapper->submit()) {
+
+    }
     model->submitAll();
     this->hide();
+
+    return;
 }
 
 void EmployeeDialog::rowToEdit(int row)
