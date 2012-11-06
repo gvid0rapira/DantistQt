@@ -50,10 +50,34 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeLstView->resizeColumnsToContents();
 
     // Панель списка визитов
+    visitFilterFrom = new QDateEdit(this);
+    visitFilterFrom->setMaximumWidth(80);
+    visitFilterFrom->setDate(QDate(QDate::currentDate().year(),
+                                   QDate::currentDate().month(),
+                                   1));
+    visitFilterTo = new QDateEdit(this);
+    visitFilterTo->setMaximumWidth(80);
+    visitFilterTo->setDate(QDate(QDate::currentDate().year(),
+                                 QDate::currentDate().month(),
+                                 QDate::currentDate().daysInMonth()));
+
+    visitFilterApplyBtn = new QPushButton(tr("Обновить") ,this);
+    visitFilterApplyBtn->setMaximumWidth(80);
+    connect(visitFilterApplyBtn, SIGNAL(clicked()), this, SLOT(updateVisitsLst()));
+
+    QHBoxLayout *visitFilterLayout = new QHBoxLayout(this);
+    visitFilterLayout->addWidget(visitFilterFrom);
+    visitFilterLayout->addWidget(visitFilterTo);
+    visitFilterLayout->addWidget(visitFilterApplyBtn);
+    visitFilterLayout->addStretch(500);
+
+    QWidget *visitFilterPanel = new QWidget(this);
+    visitFilterPanel->setLayout(visitFilterLayout);
+
     employeeVisitLstModel = new QSqlQueryModel(this);
-
-    employeeVisitLstModel->setQuery(getEmplVisitSql());
-
+    employeeVisitLstModel->setQuery(getEmplVisitQuery(
+                                        visitFilterFrom->date(),
+                                        visitFilterTo->date()));
     employeeVisitLstModel->setHeaderData(1, Qt::Horizontal,
                                          tr("Фамилия"));
     employeeVisitLstModel->setHeaderData(2, Qt::Horizontal,
@@ -71,13 +95,25 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeVisitLstView->setColumnHidden(0, true);
     employeeVisitLstView->resizeColumnsToContents();
 
+    QWidget *visitLstPanel = new QWidget(this);
+    QVBoxLayout *visitLstLayout = new QVBoxLayout(this);
+    visitLstPanel->setLayout(visitLstLayout);
+
+    visitLstLayout->addWidget(visitFilterPanel);
+    visitLstLayout->addWidget(employeeVisitLstView);
+
+
     // Панель простого отчета
     reportSimplePanel   = new QWidget();
     repSimpleTitleLbl   = new QLabel(tr("Реестр"), this);
     repSimpleFromLbl    = new QLabel(tr("с"), this);
-    repSimpleFromDEdit = new QDateEdit(QDate::currentDate(), this);
+    repSimpleFromDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
+                                             QDate::currentDate().month(),
+                                             1), this);
     repSimpleToLbl      = new QLabel(tr("по"), this);
-    repSimpleToDEdit   = new QDateEdit(QDate::currentDate(), this);
+    repSimpleToDEdit   = new QDateEdit(QDate(QDate::currentDate().year(),
+                                             QDate::currentDate().month(),
+                                             QDate::currentDate().daysInMonth()), this);
     repSimpleMakeBtn    = new QPushButton(tr("Сформировать"));
     repSimpleMakeBtn->setMaximumWidth(100);
     connect(repSimpleMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportSimple()));
@@ -101,9 +137,13 @@ MainWindow::MainWindow(QWidget *parent) :
     repAccPanel = new QWidget();
     repAccTitleLbl = new QLabel(tr("Отчет для бухгалтерии"), this);
     repAccFromLbl = new QLabel(tr("с"), this);
-    repAccToDEdit = new QDateEdit(QDate::currentDate(), this);
+    repAccFromDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
+                                          QDate::currentDate().month(),
+                                          1), this);
     repAccToLbl = new QLabel(tr("по"), this);
-    repAccFromDEdit = new QDateEdit(QDate::currentDate(), this);
+    repAccToDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
+                                        QDate::currentDate().month(),
+                                        QDate::currentDate().daysInMonth()), this);
     repAccMakeBtn =  new QPushButton(tr("Сформировать"));
     repAccMakeBtn->setMaximumWidth(100);
     connect(repAccMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportAccounting()));
@@ -123,7 +163,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     stackedWidget = new QStackedWidget;
     stackedWidget->addWidget(employeeLstView);
-    stackedWidget->addWidget(employeeVisitLstView);
+    stackedWidget->addWidget(visitLstPanel);
     stackedWidget->addWidget(reportSimplePanel);
     stackedWidget->addWidget(repAccPanel);
 
@@ -135,6 +175,13 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::updateVisitsLst()
+{
+    employeeVisitLstModel->setQuery(getEmplVisitQuery(
+                                        visitFilterFrom->date(),
+                                        visitFilterTo->date()));
 }
 
 void MainWindow::exit()
@@ -268,7 +315,7 @@ void MainWindow::makeReportAccounting(){
 
     // TODO: вынести константу 250 в конфигурационный файл
     QString sql = QString("SELECT DISTINCT e.lname, e.fname, e.mname, e.tab_num, e.work_place, ")
-            + QString("v.visit_date, count(e.id), count(e.id)*250 ")
+            + QString("v.visit_date, count(e.id), count(e.id)*750 ")
             + QString("FROM employee e, visit v ")
             + QString("WHERE (v.visit_date BETWEEN date('%1') AND date('%2')) ")
                 .arg(from.toString("yyyy-MM-dd"))
@@ -498,6 +545,8 @@ void MainWindow::addEmployeeVisit()
 {
     if(!employeeVisitDlg){
         employeeVisitDlg = new EmployeeVisitDialog(-1, employeeVisitLstModel, this);
+        connect(employeeVisitDlg, SIGNAL(visitInserted()), this, SLOT(updateVisitsLst()));
+        connect(addEmployeeVisitAction, SIGNAL(triggered()), employeeVisitDlg, SLOT(initBeforDisplay()));
     } else {
         employeeVisitDlg->rowToEdit(-1);
     }
@@ -529,7 +578,7 @@ void MainWindow::delEmployeeVisit(){
     QString sql = QString("DELETE FROM visit WHERE id = %1").arg(selectId);
     QSqlQuery qury(sql);
 
-    employeeVisitLstModel->setQuery(getEmplVisitSql());
+    updateVisitsLst();
 }
 
 void MainWindow::createActions()

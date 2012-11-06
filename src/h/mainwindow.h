@@ -27,13 +27,18 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    static QString getEmplVisitSql() {
-
+    static QSqlQuery getEmplVisitQuery(QDate from, QDate to) {
 
         return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_date ")
                 + QString("FROM employee e, visit v ")
-                + QString("WHERE v.employee_id = e.id");
+                + QString("WHERE v.employee_id = e.id AND ")
+                + QString("(v.visit_date BETWEEN \"%1\" AND \"%2\")")
+                .arg(from.toString("yyyy-MM-dd"))
+                .arg(to.toString("yyyy-MM-dd"));
+
     }
+public slots:
+    void updateVisitsLst();
     
 private slots:
     void exit();
@@ -67,14 +72,18 @@ private:
     Ui::MainWindow *ui;
 
     // Модель и вид для списка визитов
+    QSqlQuery *employeeVisitLstQuery;
     QSqlQueryModel *employeeVisitLstModel;
     QTableView  *employeeVisitLstView;
+    QDateEdit *visitFilterFrom;
+    QDateEdit *visitFilterTo;
+    QPushButton *visitFilterApplyBtn;
 
     // Модель и вид для списка сотрудников
     QSqlTableModel *employeeLstModel;
     QTableView  *employeeLstView;
 
-    QWidget *reportSimplePanel;        // Панель простого отчета
+    QWidget *reportSimplePanel; // Панель простого отчета
     QLabel *repSimpleTitleLbl;
     QLabel *repSimpleFromLbl;
     QDateEdit *repSimpleFromDEdit;

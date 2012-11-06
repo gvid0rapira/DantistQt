@@ -29,7 +29,7 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *pa
     ui->emplListView->setModelColumn(1);
 
     ui->visitDateDEdit->setDate(QDate::currentDate());
-    ui->emplLineEdit->setFocus();
+    initBeforDisplay();
 }
 
 EmployeeVisitDialog::~EmployeeVisitDialog()
@@ -109,8 +109,8 @@ void EmployeeVisitDialog::on_acceptBtn_clicked()
 
 
     }
-    // Обновим модель
-    model->setQuery(MainWindow::getEmplVisitSql());
+
+    visitInserted();
     this->hide();
     return;
 }
@@ -118,4 +118,9 @@ void EmployeeVisitDialog::on_acceptBtn_clicked()
 void EmployeeVisitDialog::on_rejectBtn_clicked()
 {
     this->hide();
+}
+
+void EmployeeVisitDialog::initBeforDisplay()
+{
+    ui->emplLineEdit->setFocus();
 }

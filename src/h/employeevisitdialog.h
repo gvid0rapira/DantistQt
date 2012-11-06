@@ -21,6 +21,10 @@ public:
      */
     void rowToEdit(int row);
 
+signals:
+    void visitInserted();
+public slots:
+    void initBeforDisplay();
 private slots:
     void on_emplLineEdit_textChanged(const QString &arg1);
 
