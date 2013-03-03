@@ -12,6 +12,7 @@
 #include <QAxObject>
 #include <QDateEdit>
 
+#include <src/h/diagnosisdialog.h>
 #include <src/h/employeedialog.h>
 #include <src/h/employeevisitdialog.h>
 
@@ -29,9 +30,11 @@ public:
 
     static QSqlQuery getEmplVisitQuery(QDate from, QDate to) {
 
-        return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, v.visit_date ")
-                + QString("FROM employee e, visit v ")
+        return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, ")
+                + QString("v.visit_date, v.uet, d.name ")
+                + QString("FROM employee e, visit v, diagnosis d ")
                 + QString("WHERE v.employee_id = e.id AND ")
+                + QString("v.diagnosis_id = d.id AND ")
                 + QString("(v.visit_date BETWEEN \"%1\" AND \"%2\")")
                 .arg(from.toString("yyyy-MM-dd"))
                 .arg(to.toString("yyyy-MM-dd"));
@@ -45,6 +48,7 @@ private slots:
     void about();
     void showVisits();
     void showEmployees();
+    void showDiagnosises();
 
     void showReportSimple();
     void makeReportSimple();
@@ -54,6 +58,9 @@ private slots:
     void addEmployee();
     void editEmployee();
     void delEmployee();
+
+    void addDiagnosis();
+    void delDiagnosis();
 
     void addEmployeeVisit();
     void editEmployeeVisit();
@@ -66,7 +73,8 @@ private:
     void createMenus();
     void createToolBars();
 
-    void drawCellBorders(QAxObject &sheet, int row, int colCount); // Рисование гнаниц ячеек отчета
+    // Рисование гнаниц ячеек отчета
+    void drawCellBorders(QAxObject &sheet, int row, int colCount);
 
 private:
     Ui::MainWindow *ui;
@@ -82,6 +90,10 @@ private:
     // Модель и вид для списка сотрудников
     QSqlTableModel *employeeLstModel;
     QTableView  *employeeLstView;
+
+    // Модель и вид для списка диагнозов
+    QSqlTableModel *diagnLstModel;
+    QTableView  *diagnLstView;
 
     QWidget *reportSimplePanel; // Панель простого отчета
     QLabel *repSimpleTitleLbl;
@@ -109,11 +121,13 @@ private:
 
     QToolBar *mainToolBar;
     QToolBar *employeeToolBar;
+    QToolBar *diagnToolBar;
     QToolBar *employeeVisitToolBar;
 
     QAction *exitAction;
     QAction *showVisitsAction;
     QAction *showEmployeesAction;
+    QAction *showDiagnAction;
     QAction *reportSimpleAction;
     QAction *reportForAccountingAction;
     QAction *aboutAction;
@@ -123,11 +137,15 @@ private:
     QAction *editEmployeeAction;
     QAction *delEmployeeAction;
 
+    QAction *addDiagnAction;
+    QAction *delDiagnAction;
+
     QAction *addEmployeeVisitAction;
     QAction *editEmployeeVisitAction;
     QAction *delEmployeeVisitAction;
 
-    EmployeeDialog *employeeDlg;
+    DiagnosisDialog     *diagnDlg;
+    EmployeeDialog      *employeeDlg;
     EmployeeVisitDialog *employeeVisitDlg;
 };
 

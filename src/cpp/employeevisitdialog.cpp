@@ -28,6 +28,11 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *pa
     ui->emplListView->setModel(emplLstModel);
     ui->emplListView->setModelColumn(1);
 
+    diagnLstModel = new QSqlQueryModel();
+    diagnLstModel->setQuery(QString("SELECT * FROM diagnosis"));
+    ui->diagnCBox->setModel(diagnLstModel);
+    ui->diagnCBox->setModelColumn(1);
+
     ui->visitDateDEdit->setDate(QDate::currentDate());
     initBeforDisplay();
 }
@@ -35,6 +40,8 @@ EmployeeVisitDialog::EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *pa
 EmployeeVisitDialog::~EmployeeVisitDialog()
 {
     delete ui;
+    delete emplLstModel;
+    delete diagnLstModel;
 }
 
 void EmployeeVisitDialog::on_emplLineEdit_textChanged(const QString &arg1)
@@ -82,25 +89,27 @@ void EmployeeVisitDialog::on_acceptBtn_clicked()
 
     if(errStr.length() != 0) {
         errStr.insert(0, tr("Необходимо: \n"));
-        QMessageBox msgBox;
-        msgBox.setText(errStr);
-        msgBox.exec();
+        QMessageBox::warning(this, tr("Ошибка ввода"),errStr);
         return;
     }
+    //--*- Диагноз
+    int diagnId = diagnLstModel->index(ui->diagnCBox->currentIndex(), 0)
+            .data().toInt();
+    float uet = ui->uetEdit->text().toFloat();
+
+    //--*- Дата посещения
     QDate date = ui->visitDateDEdit->date();
     QSqlQuery query;
-
-    query.prepare(QString("INSERT INTO visit (employee_id, visit_date)")
-                  + QString("VALUES (:employee_id, :visit_date)"));
+    query.prepare(QString("INSERT INTO visit (employee_id, visit_date, uet, diagnosis_id)")
+                  + QString("VALUES (:employee_id, :visit_date, :uet, :diagnosis_id)"));
     query.bindValue(":employee_id", employeeId);
     query.bindValue(":visit_date", date);
+    query.bindValue(":uet", uet);
+    query.bindValue(":diagnosis_id", diagnId);
 
     if(!query.exec()){
-        QMessageBox msgBox;
-        msgBox.setText(QObject::tr("Ошибка. Не удалось сохранить данные."));
-        // TODO: Сделать вывод строки через tr()
-        msgBox.setDetailedText(query.lastError().text());
-        msgBox.exec();
+        QMessageBox::critical(this, tr("Ошибка сохранения в БД"),
+                              query.lastError().text());
         qDebug() << "== Error ======================";
         qDebug() << "Number:        " << query.lastError().number();
         qDebug() << "Type:          " << query.lastError().type();

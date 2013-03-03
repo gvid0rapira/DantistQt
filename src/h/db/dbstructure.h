@@ -9,6 +9,10 @@ enum {
     Employee_Tab_Num = 4,
     Employee_Work_Place = 5
 };
+enum {
+    Diagnosis_Id = 0,
+    Diagnosis_name = 1
+};
 
 enum {
     Visit_Id= 0,

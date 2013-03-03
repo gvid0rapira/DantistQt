@@ -5,6 +5,7 @@
 
 #include <QRegExpValidator>
 #include <QMessageBox>
+#include <QtSql>
 
 EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     : QDialog(parent)
@@ -44,7 +45,7 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     rejectButton->setDefault(true);
 
     connect(acceptButton, SIGNAL(clicked()), this, SLOT(acceptInput()));//SLOT(accept()));
-    connect(rejectButton, SIGNAL(clicked()), this, SLOT(reject()));
+    connect(rejectButton, SIGNAL(clicked()), this, SLOT(rejectInput()));
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(acceptButton);
@@ -77,16 +78,7 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     mapper->addMapping(depEdit, Employee_Work_Place);
     mapper->addMapping(tabNumEdit, Employee_Tab_Num);
 
-    if(row != -1)
-    {
-        mapper->setCurrentIndex(row);
-    } else {
-
-        mapper->toLast();
-        int row = mapper->currentIndex();
-        model->insertRow(row);
-        mapper->setCurrentIndex(row);
-    }
+    rowToEdit(row);
 }
 
 EmployeeDialog::~EmployeeDialog()
@@ -108,15 +100,23 @@ void EmployeeDialog::acceptInput()
         errStr.append(tr("  * Подразделение \n"));
     if(errStr.length() != 0) {
         errStr.insert(0, tr("Необходимо заполнить поля: \n"));
-        QMessageBox msgBox;
-        msgBox.setText(errStr);
-        msgBox.exec();
+        QMessageBox::warning(this, tr("Ошибка ввода"), errStr);
         return;
     }
     if(!mapper->submit()) {
-
+        QMessageBox::critical(this, "Ошибка записи в БД", model->lastError().databaseText());
+        return;
     }
-    model->submitAll();
+    this->hide();
+
+    return;
+}
+
+void EmployeeDialog::rejectInput()
+{
+    if(mode == FORM_MODE_ADD) {
+        model->removeRow(mapper->currentIndex());
+    }
     this->hide();
 
     return;
@@ -124,13 +124,16 @@ void EmployeeDialog::acceptInput()
 
 void EmployeeDialog::rowToEdit(int row)
 {
-    if(row == -1){
-        mapper->toLast();
-        int row = mapper->currentIndex();
-        model->insertRow(row);
+    if(row != -1)
+    {
+        mode = FORM_MODE_EDIT;
         mapper->setCurrentIndex(row);
     } else {
-         mapper->setCurrentIndex(row);
+        mode = FORM_MODE_ADD;
+        mapper->toLast();
+        int row = mapper->currentIndex();
+        if(row == -1) row = 0; // Если модель пуста
+        model->insertRow(row);
+        mapper->setCurrentIndex(row);
     }
-
 }

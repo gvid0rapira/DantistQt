@@ -39,6 +39,7 @@ private:
 
     QSqlQueryModel *model;
     QSqlQueryModel *emplLstModel;
+    QSqlQueryModel *diagnLstModel;
     QDataWidgetMapper *mapper;
 };
 

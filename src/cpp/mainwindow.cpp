@@ -23,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     // Обнуляем диалоги, т.к. почему-то, после объявления, указатели на
     // диалоги не равны 0.
+    this->diagnDlg = 0;
     this->employeeDlg = 0;
     this->employeeVisitDlg = 0;
 
@@ -48,6 +49,18 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeLstView->setModel(employeeLstModel);
     employeeLstView->setColumnHidden(Employee_Id, true);
     employeeLstView->resizeColumnsToContents();
+
+    // Панель списка диагнозов
+    diagnLstModel = new QSqlTableModel(this);
+    diagnLstModel->setTable("diagnosis");
+    diagnLstModel->setHeaderData(Diagnosis_name, Qt::Horizontal, tr("Название"));
+    diagnLstModel->select();
+
+    diagnLstView = new QTableView;
+    diagnLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    diagnLstView->setModel(diagnLstModel);
+    diagnLstView->setColumnHidden(Diagnosis_Id, true);
+    diagnLstView->resizeColumnsToContents();
 
     // Панель списка визитов
     visitFilterFrom = new QDateEdit(this);
@@ -88,6 +101,10 @@ MainWindow::MainWindow(QWidget *parent) :
                                          tr("Таб. №"));
     employeeVisitLstModel->setHeaderData(5, Qt::Horizontal,
                                          tr("Дата посещения"));
+    employeeVisitLstModel->setHeaderData(6, Qt::Horizontal,
+                                         tr("ует"));
+    employeeVisitLstModel->setHeaderData(7, Qt::Horizontal,
+                                         tr("Диагноз"));
 
     employeeVisitLstView = new QTableView;
     employeeVisitLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -166,6 +183,7 @@ MainWindow::MainWindow(QWidget *parent) :
     stackedWidget->addWidget(visitLstPanel);
     stackedWidget->addWidget(reportSimplePanel);
     stackedWidget->addWidget(repAccPanel);
+    stackedWidget->addWidget(diagnLstView);
 
     stackedWidget->setCurrentIndex(1);
 
@@ -194,18 +212,28 @@ void MainWindow::about()
 
 }
 
-void MainWindow::showVisits()
+void MainWindow::showDiagnosises()
 {
+    employeeVisitToolBar->hide();
     employeeToolBar->hide();
-    employeeVisitToolBar->show();
-    stackedWidget->setCurrentIndex(1);
+    diagnToolBar->show();
+    stackedWidget->setCurrentIndex(4);
 }
 
 void MainWindow::showEmployees()
 {
     employeeVisitToolBar->hide();
     employeeToolBar->show();
+    diagnToolBar->hide();
     stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::showVisits()
+{
+    employeeToolBar->hide();
+    employeeVisitToolBar->show();
+    diagnToolBar->hide();
+    stackedWidget->setCurrentIndex(1);
 }
 
 void MainWindow::showReportSimple()
@@ -220,12 +248,13 @@ void MainWindow::makeReportSimple()
     QDate from = repSimpleFromDEdit->date();
     QDate to   = repSimpleToDEdit->date();
 
-    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_date ")
-            + QString("FROM employee e, visit v ")
+    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_date, d.name ")
+            + QString("FROM employee e, visit v, diagnosis d ")
             + QString("WHERE (date(v.visit_date) BETWEEN date('%1') AND date('%2'))")
                 .arg(from.toString("yyyy-MM-dd"))
                 .arg(to.toString("yyyy-MM-dd"))
-            + QString(" AND  v.employee_id = e.id");
+            + QString(" AND  v.employee_id = e.id")
+            + QString(" AND  v.diagnosis_id = d.id");
     qDebug() << sql;
     QSqlQuery query(sql);
     if(query.isActive()) {
@@ -275,6 +304,7 @@ void MainWindow::makeReportSimple()
         QString fname = query.value(1).toString();
         QString mname = query.value(2).toString();
         QDate visiDate = query.value(3).toDate();
+        QString diagnosis = query.value(4).toString();
         qDebug() << lname << fname << mname;
         count++;
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 1 )
@@ -283,6 +313,8 @@ void MainWindow::makeReportSimple()
                 ->setProperty("Value", QVariant(lname + " " + fname + " " + mname));
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 4 )
                 ->setProperty("Value", QVariant(visiDate.toString("dd.MM.yyyy")));
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 5 )
+                ->setProperty("Value", QVariant(diagnosis));
 
         // Рисование границ
         drawCellBorders(*sheet, startRow + count, 5);
@@ -313,9 +345,9 @@ void MainWindow::makeReportAccounting(){
     QDate from = repAccFromDEdit->date();
     QDate to   = repAccToDEdit->date();
 
-    // TODO: вынести константу 250 в конфигурационный файл
+    // TODO: вынести константу 750 в конфигурационный файл
     QString sql = QString("SELECT DISTINCT e.lname, e.fname, e.mname, e.tab_num, e.work_place, ")
-            + QString("v.visit_date, count(e.id), count(e.id)*750 ")
+            + QString("v.visit_date, sum(v.uet), sum(v.uet)*750 ")
             + QString("FROM employee e, visit v ")
             + QString("WHERE (v.visit_date BETWEEN date('%1') AND date('%2')) ")
                 .arg(from.toString("yyyy-MM-dd"))
@@ -369,21 +401,22 @@ void MainWindow::makeReportAccounting(){
 
     int startRow = 12;
     int rowCount = 0;
-    int allVisits = 0;
-    int totalSpent =0;
+    float allUet = 0;
+    float totalSpent =0;
+    QLocale locale(QLocale::Russian, QLocale::RussianFederation);// Для форматирования чисел
     while( query.next() ) {
         QString lname = query.value(0).toString();
         QString fname = query.value(1).toString();
         QString mname = query.value(2).toString();
         int tab_num   = query.value(3).toInt();
         QString work_place = query.value(4).toString();
-        int visit_count = query.value(6).toInt();
-        allVisits += visit_count;
-        int sum_spent = query.value(7).toInt();
+        float uet_sum = query.value(6).toFloat();
+        allUet += uet_sum;
+        float sum_spent = query.value(7).toFloat();
         totalSpent += sum_spent;
 
         qDebug() << lname << " " << fname << " " << mname << ", "
-                 << tab_num << ", " << work_place << ", " << visit_count << ", " << sum_spent;
+                 << tab_num << ", " << work_place << ", " << uet_sum << ", " << sum_spent;
 
         rowCount++;
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 1 )
@@ -395,9 +428,10 @@ void MainWindow::makeReportAccounting(){
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 4 )
                 ->setProperty("Value", QVariant(work_place));
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 5 )
-                ->setProperty("Value", QVariant(visit_count));
+                ->setProperty("Value", QVariant(locale.toString(uet_sum)));
+
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 6 )
-                ->setProperty("Value", QVariant(sum_spent));
+                ->setProperty("Value", QVariant(locale.toString(sum_spent)));
         drawCellBorders(*sheet, startRow + rowCount, 7);
     }
 
@@ -408,9 +442,9 @@ void MainWindow::makeReportAccounting(){
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 2 )
             ->setProperty("Value", QVariant(tr("Итого:")));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 5 )
-            ->setProperty("Value", allVisits);
+            ->setProperty("Value", locale.toString(allUet));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 6 )
-            ->setProperty("Value", totalSpent);
+            ->setProperty("Value", locale.toString(totalSpent));
 
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 2 )
             ->setProperty("HorizontalAlignment", -4152);
@@ -505,6 +539,31 @@ void MainWindow::importEmplCSV()
     msg.exec();
 }
 
+void MainWindow::addDiagnosis(){
+    if(!diagnDlg){
+        diagnDlg = new DiagnosisDialog(diagnLstModel, this);
+    }
+
+    diagnDlg->initEditMode(-1);
+    diagnDlg->show();
+    diagnDlg->raise();
+    diagnDlg->activateWindow();
+}
+
+void MainWindow::delDiagnosis()
+{
+    QModelIndexList list = diagnLstView->selectionModel()->selection().indexes();
+    if(list.size() == 0){
+        QMessageBox::warning(this, tr("Ошибка удаления"),
+                             tr("Не выбрана строка"));
+        return;
+    }
+    QModelIndex index = list.first();
+    int row = index.row();
+    diagnLstModel->removeRow(row);
+    diagnLstModel->submitAll();
+}
+
 void MainWindow::addEmployee()
 {
     if(!employeeDlg){
@@ -520,8 +579,14 @@ void MainWindow::addEmployee()
 void MainWindow::editEmployee()
 {
     QModelIndexList list = employeeLstView->selectionModel()->selection().indexes();
+    if(list.size() == 0){
+        QMessageBox::warning(this, tr("Ошибка редактирования"),
+                             tr("Не выбрана строка"));
+        return;
+    }
     QModelIndex index = list.first();
     int row = index.row();
+
     if(!employeeDlg){
         employeeDlg = new EmployeeDialog(row, employeeLstModel, this);
     } else {
@@ -535,6 +600,11 @@ void MainWindow::editEmployee()
 void MainWindow::delEmployee()
 {
     QModelIndexList list = employeeLstView->selectionModel()->selection().indexes();
+    if(list.size() == 0){
+        QMessageBox::warning(this, tr("Ошибка удаления"),
+                             tr("Не выбрана строка"));
+        return;
+    }
     QModelIndex index = list.first();
     int row = index.row();
     employeeLstModel->removeRow(row);
@@ -592,6 +662,20 @@ void MainWindow::createActions()
     showVisitsAction = new QAction(tr("Визиты"), this);
     connect(showVisitsAction, SIGNAL(triggered()), this, SLOT(showVisits()));
 
+    showDiagnAction = new QAction(tr("Диагнозы"), this);
+    connect(showDiagnAction, SIGNAL(triggered()), this, SLOT(showDiagnosises()));
+
+    addDiagnAction = new QAction(tr("Добавить диагноз"), this);
+    addDiagnAction->setIcon(QIcon(":/images/add_file.png"));
+    addDiagnAction->setToolTip(tr("Добавить диагноз"));
+    addDiagnAction->setShortcut(QKeySequence(Qt::Key_Insert));
+    connect(addDiagnAction, SIGNAL(triggered()), this, SLOT(addDiagnosis()));
+
+    delDiagnAction = new QAction(tr("Удалить диагноз"), this);
+    delDiagnAction->setIcon(QIcon(":/images/delete.png"));
+    delDiagnAction->setToolTip(tr("Удалить диагноз"));
+    connect(delDiagnAction, SIGNAL(triggered()), this, SLOT(delDiagnosis()));
+
     showEmployeesAction = new QAction(tr("Сотрудники"), this);
     connect(showEmployeesAction, SIGNAL(triggered()), this, SLOT(showEmployees()));
 
@@ -644,6 +728,7 @@ void MainWindow::createMenus()
     fileMenu->addAction(exitAction);
 
     listsMenu = menuBar()->addMenu(tr("Списки"));
+    listsMenu->addAction(showDiagnAction);
     listsMenu->addAction(showVisitsAction);
     listsMenu->addAction(showEmployeesAction);
 
@@ -659,8 +744,18 @@ void MainWindow::createMenus()
 
 }
 
+/*! \brief Метод создает все тулбары.
+ *
+ *   Сразу инициализируется отображение/скрытие тулбаров.
+ *
+ */
 void MainWindow::createToolBars()
 {
+    diagnToolBar = addToolBar(tr("Панель диагноза"));
+    diagnToolBar->addAction(addDiagnAction);
+    diagnToolBar->addAction(delDiagnAction);
+    diagnToolBar->hide();
+
     employeeToolBar = addToolBar(tr("Панель сотрудника"));
     employeeToolBar->addAction(addEmployeeAction);
     employeeToolBar->addAction(editEmployeeAction);

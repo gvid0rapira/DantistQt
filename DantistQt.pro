@@ -15,17 +15,20 @@ SOURCES += src/cpp/main.cpp\
     src/cpp/mainwindow.cpp \
     src/cpp/db/Connection.cpp \
     src/cpp/employeedialog.cpp \
-    src/cpp/employeevisitdialog.cpp
+    src/cpp/employeevisitdialog.cpp \
+    src/cpp/diagnosisdialog.cpp
 
 HEADERS  += src/h/mainwindow.h \
     src/h/db/Connection.h \
     src/h/db/dbstructure.h\
     src/h/employeedialog.h \
-    src/h/employeevisitdialog.h
+    src/h/employeevisitdialog.h \
+    src/h/diagnosisdialog.h
 
 
 FORMS    += src/forms/mainwindow.ui \
-    src/forms/employeevisitdialog.ui
+    src/forms/employeevisitdialog.ui \
+    src/forms/diagnosisdialog.ui
 
 OTHER_FILES += \
     src/sql/test_data.sqlce \
