@@ -1,11 +1,13 @@
-#include <QtGui/QApplication>
+#include <QApplication>
+#include <QLocale>
 #include "src/h/mainwindow.h"
 #include "src/h/db/Connection.h"
 
 int main(int argc, char *argv[])
 {
-    // Установка кодировки для строк, отображаемых приложением с помощью tr.
-    QTextCodec::setCodecForTr(QTextCodec::codecForName("Windows-1251"));
+    // РЈСЃС‚Р°РЅРѕРІРєР° РєРѕРґРёСЂРѕРІРєРё РґР»СЏ СЃС‚СЂРѕРє, РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹С… РїСЂРёР»РѕР¶РµРЅРёРµРј СЃ РїРѕРјРѕС‰СЊСЋ tr.
+    // QTextCodec::setCodecForTr(QTextCodec::codecForName("Windows-1251"));
+    QLocale::setDefault(QLocale(QLocale::Russian, QLocale::RussianFederation));
 
     QApplication a(argc, argv);
 
@@ -21,3 +23,4 @@ int main(int argc, char *argv[])
     
     return a.exec();
 }
+

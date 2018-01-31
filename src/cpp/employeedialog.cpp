@@ -12,37 +12,41 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
 {
     model = m;
 
-    //--*- Ôîðìèðóåì èíòåðôåéñ
+    //--*- Ð¤Ð¾Ñ€Ð¼Ð¸Ñ€ÑƒÐµÐ¼ Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹Ñ
 
     QRegExpValidator *nameValidator
-            = new QRegExpValidator(QRegExp(tr("[À-ß][à-ÿ]{1,50}")) ,this);
-    lnameLabel = new QLabel(tr("Ôàìèëèÿ:"), this);
+            = new QRegExpValidator(QRegExp(tr("[Ð-Ð¯][Ð°-Ñ]{1,50}")) ,this);
+    lnameLabel = new QLabel(tr("Ð¤Ð°Ð¼Ð¸Ð»Ð¸Ñ:"), this);
     lnameEdit = new QLineEdit(this);
     lnameEdit->setValidator(nameValidator);
     lnameLabel->setBuddy(lnameEdit);
 
-    fnameLabel = new QLabel(tr("Èìÿ:"));
+    fnameLabel = new QLabel(tr("Ð˜Ð¼Ñ:"));
     fnameEdit = new QLineEdit;
     fnameEdit->setValidator(nameValidator);
     fnameLabel->setBuddy(fnameEdit);
 
-    mnameLabel = new QLabel(tr("Îò÷åñòâî:"));
+    mnameLabel = new QLabel(tr("ÐžÑ‚Ñ‡ÐµÑÑ‚Ð²Ð¾:"));
     mnameEdit = new QLineEdit;
     mnameEdit->setValidator(nameValidator);
     mnameLabel->setBuddy(mnameEdit);
 
-    tabNumLabel = new QLabel(tr("Òàá.¹:"));
+    birthDateLabel = new QLabel(tr("Ð”Ð°Ñ‚Ð° Ñ€Ð¾Ð¶Ð´ÐµÐ½Ð¸Ñ:"), this);
+    birthDateDEdit = new QDateEdit(this);
+    birthDateDEdit->setDisplayFormat("dd.MM.yyyy");
+    birthDateLabel->setBuddy(birthDateDEdit);
+
+    tabNumLabel = new QLabel(tr("Ð¢Ð°Ð±.â„–:"));
     tabNumEdit = new QLineEdit;
     tabNumEdit->setValidator(new QIntValidator(0, 1000000, this));
     tabNumLabel->setBuddy(tabNumEdit);
 
-    depLabel = new QLabel(tr("Ïîäðàçäåëåíèå:"));
+    depLabel = new QLabel(tr("ÐŸÐ¾Ð´Ñ€Ð°Ð·Ð´ÐµÐ»ÐµÐ½Ð¸Ðµ:"));
     depEdit = new QLineEdit;
     depLabel->setBuddy(depEdit);
 
     acceptButton = new QPushButton(tr("OK"));
-    rejectButton = new QPushButton(tr("Îòìåíà"));
-    rejectButton->setDefault(true);
+    rejectButton = new QPushButton(tr("ÐžÑ‚Ð¼ÐµÐ½Ð°"));
 
     connect(acceptButton, SIGNAL(clicked()), this, SLOT(acceptInput()));//SLOT(accept()));
     connect(rejectButton, SIGNAL(clicked()), this, SLOT(rejectInput()));
@@ -59,26 +63,39 @@ EmployeeDialog::EmployeeDialog(int row, QSqlTableModel *m, QWidget *parent)
     mainLayout->addWidget(fnameEdit, 1, 1);
     mainLayout->addWidget(mnameLabel, 2, 0);
     mainLayout->addWidget(mnameEdit, 2, 1);
-    mainLayout->addWidget(tabNumLabel, 3, 0);
-    mainLayout->addWidget(tabNumEdit, 3, 1);
-    mainLayout->addWidget(depLabel, 4, 0);
-    mainLayout->addWidget(depEdit, 4, 1);
-    mainLayout->addLayout(buttonLayout, 5, 0, 1, 2);
+    mainLayout->addWidget(birthDateLabel, 3, 0);
+    mainLayout->addWidget(birthDateDEdit, 3, 1);
+    mainLayout->addWidget(tabNumLabel, 4, 0);
+    mainLayout->addWidget(tabNumEdit, 4, 1);
+    mainLayout->addWidget(depLabel, 5, 0);
+    mainLayout->addWidget(depEdit, 5, 1);
+    mainLayout->addLayout(buttonLayout, 6, 0, 1, 2);
     setLayout(mainLayout);
 
-    setWindowTitle(tr("Ñîòðóäíèê"));
+    setWindowTitle(tr("Ð¡Ð¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸Ðº"));
 
-    //--*- Îòîáðàæåíèå ìîäåëè äàííûõ íà âèäæåòû
+    //--*- ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð¼Ð¾Ð´ÐµÐ»Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð½Ð° Ð²Ð¸Ð´Ð¶ÐµÑ‚Ñ‹
     mapper = new QDataWidgetMapper(this);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
     mapper->setModel(model);
     mapper->addMapping(lnameEdit, Employee_Lname);
     mapper->addMapping(fnameEdit, Employee_Fname);
     mapper->addMapping(mnameEdit, Employee_Mname);
+    mapper->addMapping(birthDateDEdit, Employee_Birth_Date);
     mapper->addMapping(depEdit, Employee_Work_Place);
     mapper->addMapping(tabNumEdit, Employee_Tab_Num);
 
     rowToEdit(row);
+
+    //--*- Ð—Ð°Ð´Ð°Ð½Ð¸Ðµ Ð¿Ð¾Ñ€ÑÐ´ÐºÐ° Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´Ð° Ð¿Ð¾ Tab
+    QWidget::setTabOrder(lnameEdit , fnameEdit);
+    QWidget::setTabOrder(fnameEdit, mnameEdit);
+    QWidget::setTabOrder(mnameEdit, birthDateDEdit);
+    QWidget::setTabOrder(birthDateDEdit, tabNumEdit);
+    QWidget::setTabOrder(tabNumEdit, depEdit);
+    QWidget::setTabOrder(depEdit, acceptButton);
+    QWidget::setTabOrder(acceptButton, rejectButton);
+
 }
 
 EmployeeDialog::~EmployeeDialog()
@@ -90,21 +107,21 @@ void EmployeeDialog::acceptInput()
 {
     QString errStr;
     if(lnameEdit->text().length() == 0)
-        errStr.append(tr("  * Ôàìèëèÿ\n"));
+        errStr.append(tr("  * Ð¤Ð°Ð¼Ð¸Ð»Ð¸Ñ\n"));
     if(fnameEdit->text().length() == 0)
-        errStr.append(tr("  * Èìÿ\n"));
+        errStr.append(tr("  * Ð˜Ð¼Ñ\n"));
 
     if(tabNumEdit->text().length() == 0)
-        errStr.append(tr("  * Òàáåëüíûé íîìåð\n"));
+        errStr.append(tr("  * Ð¢Ð°Ð±ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€\n"));
     if(depEdit->text().length() == 0)
-        errStr.append(tr("  * Ïîäðàçäåëåíèå \n"));
+        errStr.append(tr("  * ÐŸÐ¾Ð´Ñ€Ð°Ð·Ð´ÐµÐ»ÐµÐ½Ð¸Ðµ \n"));
     if(errStr.length() != 0) {
-        errStr.insert(0, tr("Íåîáõîäèìî çàïîëíèòü ïîëÿ: \n"));
-        QMessageBox::warning(this, tr("Îøèáêà ââîäà"), errStr);
+        errStr.insert(0, tr("ÐÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ð¾ Ð·Ð°Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð»Ñ: \n"));
+        QMessageBox::warning(this, tr("ÐžÑˆÐ¸Ð±ÐºÐ° Ð²Ð²Ð¾Ð´Ð°"), errStr);
         return;
     }
     if(!mapper->submit()) {
-        QMessageBox::critical(this, "Îøèáêà çàïèñè â ÁÄ", model->lastError().databaseText());
+        QMessageBox::critical(this, "ÐžÑˆÐ¸Ð±ÐºÐ° Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð² Ð‘Ð”", model->lastError().databaseText());
         return;
     }
     this->hide();
@@ -132,8 +149,9 @@ void EmployeeDialog::rowToEdit(int row)
         mode = FORM_MODE_ADD;
         mapper->toLast();
         int row = mapper->currentIndex();
-        if(row == -1) row = 0; // Åñëè ìîäåëü ïóñòà
+        if(row == -1) row = 0; // Ð•ÑÐ»Ð¸ Ð¼Ð¾Ð´ÐµÐ»ÑŒ Ð¿ÑƒÑÑ‚Ð°
         model->insertRow(row);
         mapper->setCurrentIndex(row);
     }
 }
+

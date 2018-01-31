@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QDateEdit>
 #include <QPushButton>
 
 #include <QSqlTableModel>
@@ -22,12 +23,13 @@ public:
     ~EmployeeDialog();
 
     /*!
-     * \brief Инициализация режима редактирования работы формы.
+     * \brief РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЂРµР¶РёРјР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ СЂР°Р±РѕС‚С‹ С„РѕСЂРјС‹.
      *
-     * Форма работает в двух режимах: редактирование или добавление. Этот метод устанавливает режим
-     * формы в соответствии с переданным параметром row:
-     *  -1 - добавление,
-     * целое больше -1 - редактирование.
+     * Р¤РѕСЂРјР° СЂР°Р±РѕС‚Р°РµС‚ РІ РґРІСѓС… СЂРµР¶РёРјР°С…: СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РёР»Рё РґРѕР±Р°РІР»РµРЅРёРµ.
+     * Р­С‚РѕС‚ РјРµС‚РѕРґ СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ СЂРµР¶РёРј С„РѕСЂРјС‹ РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРё СЃ РїРµСЂРµРґР°РЅРЅС‹Рј
+     * РїР°СЂР°РјРµС‚СЂРѕРј row:
+     *  -1 - РґРѕР±Р°РІР»РµРЅРёРµ,
+     *  С†РµР»РѕРµ Р±РѕР»СЊС€Рµ -1 - СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ.
      */
     void rowToEdit(int row);
 private slots:
@@ -35,28 +37,31 @@ private slots:
     void rejectInput();
 
 private:
-    //--*- режимы
+    //--*- СЂРµР¶РёРјС‹
     FormMode mode;
 
-    //--*- Список элементов интерфейса
+    //--*- РЎРїРёСЃРѕРє СЌР»РµРјРµРЅС‚РѕРІ РёРЅС‚РµСЂС„РµР№СЃР°
     QLabel *lnameLabel;
     QLabel *fnameLabel;
     QLabel *mnameLabel;
+    QLabel *birthDateLabel;
     QLabel *tabNumLabel;
     QLabel *depLabel;
 
     QLineEdit *lnameEdit;
     QLineEdit *fnameEdit;
     QLineEdit *mnameEdit;
+    QDateEdit *birthDateDEdit;
     QLineEdit *tabNumEdit;
     QLineEdit *depEdit;
 
     QPushButton *acceptButton;
     QPushButton *rejectButton;
 
-    //--*- Объекты для работы с данными
+    //--*- РћР±СЉРµРєС‚С‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РґР°РЅРЅС‹РјРё
     QSqlTableModel *model;
     QDataWidgetMapper *mapper;
 };
 
 #endif // EMPLOYEEDIALOG_H
+

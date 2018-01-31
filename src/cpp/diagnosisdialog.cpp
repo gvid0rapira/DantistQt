@@ -11,7 +11,7 @@ DiagnosisDialog::DiagnosisDialog(QSqlTableModel *m, QWidget *parent) :
     ui->setupUi(this);
     model = m;
 
-    //--*- Îòîáðàæåíèå ìîäåëè äàííûõ íà âèäæåòû
+    //--*- ÐžÑ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð¼Ð¾Ð´ÐµÐ»Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð½Ð° Ð²Ð¸Ð´Ð¶ÐµÑ‚Ñ‹
     mapper = new QDataWidgetMapper(this);
     mapper->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
     mapper->setModel(model);
@@ -33,14 +33,14 @@ void DiagnosisDialog::on_OKBtn_clicked()
 {
     QString errStr;
     if(ui->nameEdt->text().length() == 0)
-        errStr.append(tr("  * Íàçâàíèå\n"));
+        errStr.append(tr("  * ÐÐ°Ð·Ð²Ð°Ð½Ð¸Ðµ\n"));
     if(errStr.length() != 0) {
-        errStr.insert(0, tr("Íåîáõîäèìî çàïîëíèòü ïîëÿ: \n"));
-        QMessageBox::warning(this, tr("Îøèáêà ââîäà"), errStr);
+        errStr.insert(0, tr("ÐÐµÐ¾Ð±Ñ…Ð¾Ð´Ð¸Ð¼Ð¾ Ð·Ð°Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð»Ñ: \n"));
+        QMessageBox::warning(this, tr("ÐžÑˆÐ¸Ð±ÐºÐ° Ð²Ð²Ð¾Ð´Ð°"), errStr);
         return;
     }
     if(!mapper->submit()) {
-        QMessageBox::critical(this, tr("Îøèáêà çàïèñè â ÁÄ"), model->lastError().databaseText());
+        QMessageBox::critical(this, tr("ÐžÑˆÐ¸Ð±ÐºÐ° Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð² Ð‘Ð”"), model->lastError().databaseText());
         return;
     }
     this->hide();
@@ -58,8 +58,9 @@ void DiagnosisDialog::initEditMode(int row)
         mode = FORM_MODE_ADD;
         mapper->toLast();
         int row = mapper->currentIndex();
-        if(row == -1) row = 0; // Åñëè ìîäåëü ïóñòà
+        if(row == -1) row = 0; // Ð•ÑÐ»Ð¸ Ð¼Ð¾Ð´ÐµÐ»ÑŒ Ð¿ÑƒÑÑ‚Ð°
         model->insertRow(row);
         mapper->setCurrentIndex(row);
     }
 }
+

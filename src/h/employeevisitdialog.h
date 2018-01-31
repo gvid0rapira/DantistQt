@@ -5,6 +5,9 @@
 #include <QtSql>
 #include <QDataWidgetMapper>
 
+#include "src/h/diagnostablemodel.h"
+#include "src/h/db/visitar.h"
+
 namespace Ui {
 class EmployeeVisitDialog;
 }
@@ -14,17 +17,20 @@ class EmployeeVisitDialog : public QDialog
     Q_OBJECT
     
 public:
-    explicit EmployeeVisitDialog(int row, QSqlQueryModel *m, QWidget *parent = 0);
+    explicit EmployeeVisitDialog(QWidget *parent = 0);
     ~EmployeeVisitDialog();
     /**
-     * Указание строки модели данных для редактирования.
+     * РЈРєР°Р·Р°РЅРёРµ РІРёР·РёС‚Р° РґР»СЏ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ.
      */
-    void rowToEdit(int row);
-
+    void setVisitToEdit(VisitAR *visit);
+    /*!
+     * РћС‡РёСЃС‚РєР° РїРѕР»РµР№ С„РѕСЂРјС‹
+     */
+    void clear();
 signals:
     void visitInserted();
 public slots:
-    void initBeforDisplay();
+    // void initBeforDisplay();
 private slots:
     void on_emplLineEdit_textChanged(const QString &arg1);
 
@@ -34,13 +40,23 @@ private slots:
 
     void on_rejectBtn_clicked();
 
+    void selectPatientDiagn();
+    void unselectPatientDiagn();
+
+    void on_emplLineEdit_returnPressed();
+
 private:
     Ui::EmployeeVisitDialog *ui;
 
-    QSqlQueryModel *model;
-    QSqlQueryModel *emplLstModel;
-    QSqlQueryModel *diagnLstModel;
-    QDataWidgetMapper *mapper;
+    QSqlQueryModel    *emplLstModel;
+    QSqlQueryModel    *allDiagnLstModel;
+    DiagnosTableModel *emplDiagnLstModel;
+
+    VisitAR *visitToEdit;
+
+    void addVisit();
+    void updateVisit();
 };
 
 #endif // EMPLOYEEVISITDIALOG_H
+

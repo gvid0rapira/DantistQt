@@ -15,14 +15,15 @@ QSqlDatabase Connection::getConnection()
       //.arg(QDir::currentPath()));
     if(!sdb.open()){
         QMessageBox msgBox;
-        msgBox.setText(QObject::tr("Ошибка. Не установлено соединение с БД."));
-        // TODO: Сделать вывод строки через tr()
+        msgBox.setText(QObject::tr("РћС€РёР±РєР°. РќРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ СЃРѕРµРґРёРЅРµРЅРёРµ СЃ Р‘Р”."));
+        // TODO: РЎРґРµР»Р°С‚СЊ РІС‹РІРѕРґ СЃС‚СЂРѕРєРё С‡РµСЂРµР· tr()
         msgBox.setDetailedText(sdb.lastError().text());
         msgBox.exec();
         qDebug() << sdb.lastError().text();
-        // TODO: Заменить на что-нибудь осмысленное
+        // TODO: Р—Р°РјРµРЅРёС‚СЊ РЅР° С‡С‚Рѕ-РЅРёР±СѓРґСЊ РѕСЃРјС‹СЃР»РµРЅРЅРѕРµ
         throw 96;
     }
 
     return sdb;
 }
+

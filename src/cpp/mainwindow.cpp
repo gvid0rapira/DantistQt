@@ -17,12 +17,15 @@
 
 #include <iostream>
 
+#include <src/h/db/visitar.h>
+#include <src/h/report/visitgrouptag.h>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    // Обнуляем диалоги, т.к. почему-то, после объявления, указатели на
-    // диалоги не равны 0.
+    // РћР±РЅСѓР»СЏРµРј РґРёР°Р»РѕРіРё, С‚.Рє. РїРѕС‡РµРјСѓ-С‚Рѕ, РїРѕСЃР»Рµ РѕР±СЉСЏРІР»РµРЅРёСЏ, СѓРєР°Р·Р°С‚РµР»Рё РЅР°
+    // РґРёР°Р»РѕРіРё РЅРµ СЂР°РІРЅС‹ 0.
     this->diagnDlg = 0;
     this->employeeDlg = 0;
     this->employeeVisitDlg = 0;
@@ -33,15 +36,17 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenus();
     createToolBars();
 
-    // Панель списка сотрудников
+    // РџР°РЅРµР»СЊ СЃРїРёСЃРєР° СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ
     employeeLstModel = new QSqlTableModel(this);
     employeeLstModel->setTable("employee");
-    employeeLstModel->setHeaderData(Employee_Lname, Qt::Horizontal, tr("Фамилия"));
-    employeeLstModel->setHeaderData(Employee_Fname, Qt::Horizontal, tr("Имя"));
-    employeeLstModel->setHeaderData(Employee_Mname, Qt::Horizontal, tr("Отчество"));
-    employeeLstModel->setHeaderData(Employee_Tab_Num, Qt::Horizontal, tr("Таб. №"));
+    employeeLstModel->setSort(Employee_Lname, Qt::AscendingOrder);
+    employeeLstModel->setHeaderData(Employee_Lname, Qt::Horizontal, tr("Р¤Р°РјРёР»РёСЏ"));
+    employeeLstModel->setHeaderData(Employee_Fname, Qt::Horizontal, tr("РРјСЏ"));
+    employeeLstModel->setHeaderData(Employee_Mname, Qt::Horizontal, tr("РћС‚С‡РµСЃС‚РІРѕ"));
+    employeeLstModel->setHeaderData(Employee_Birth_Date, Qt::Horizontal, tr("Р”Р°С‚Р° СЂРѕР¶РґРµРЅРёСЏ"));
+    employeeLstModel->setHeaderData(Employee_Tab_Num, Qt::Horizontal, tr("РўР°Р±. в„–"));
     employeeLstModel->setHeaderData(Employee_Work_Place, Qt::Horizontal,
-                                    tr("Подразделение"));
+                                    tr("РџРѕРґСЂР°Р·РґРµР»РµРЅРёРµ"));
     employeeLstModel->select();
 
     employeeLstView = new QTableView;
@@ -50,10 +55,10 @@ MainWindow::MainWindow(QWidget *parent) :
     employeeLstView->setColumnHidden(Employee_Id, true);
     employeeLstView->resizeColumnsToContents();
 
-    // Панель списка диагнозов
+    // РџР°РЅРµР»СЊ СЃРїРёСЃРєР° РґРёР°РіРЅРѕР·РѕРІ
     diagnLstModel = new QSqlTableModel(this);
     diagnLstModel->setTable("diagnosis");
-    diagnLstModel->setHeaderData(Diagnosis_name, Qt::Horizontal, tr("Название"));
+    diagnLstModel->setHeaderData(Diagnosis_name, Qt::Horizontal, tr("РќР°Р·РІР°РЅРёРµ"));
     diagnLstModel->select();
 
     diagnLstView = new QTableView;
@@ -62,7 +67,7 @@ MainWindow::MainWindow(QWidget *parent) :
     diagnLstView->setColumnHidden(Diagnosis_Id, true);
     diagnLstView->resizeColumnsToContents();
 
-    // Панель списка визитов
+    // РџР°РЅРµР»СЊ СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ
     visitFilterFrom = new QDateEdit(this);
     visitFilterFrom->setMaximumWidth(80);
     visitFilterFrom->setDate(QDate(QDate::currentDate().year(),
@@ -74,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent) :
                                  QDate::currentDate().month(),
                                  QDate::currentDate().daysInMonth()));
 
-    visitFilterApplyBtn = new QPushButton(tr("Обновить") ,this);
+    visitFilterApplyBtn = new QPushButton(tr("РћР±РЅРѕРІРёС‚СЊ") ,this);
     visitFilterApplyBtn->setMaximumWidth(80);
     connect(visitFilterApplyBtn, SIGNAL(clicked()), this, SLOT(updateVisitsLst()));
 
@@ -88,23 +93,26 @@ MainWindow::MainWindow(QWidget *parent) :
     visitFilterPanel->setLayout(visitFilterLayout);
 
     employeeVisitLstModel = new QSqlQueryModel(this);
+    QString sql = getEmplVisitQuery(
+                visitFilterFrom->date(),
+                visitFilterTo->date());
     employeeVisitLstModel->setQuery(getEmplVisitQuery(
                                         visitFilterFrom->date(),
                                         visitFilterTo->date()));
     employeeVisitLstModel->setHeaderData(1, Qt::Horizontal,
-                                         tr("Фамилия"));
+                                         tr("Р¤Р°РјРёР»РёСЏ"));
     employeeVisitLstModel->setHeaderData(2, Qt::Horizontal,
-                                         tr("Имя"));
+                                         tr("РРјСЏ"));
     employeeVisitLstModel->setHeaderData(3, Qt::Horizontal,
-                                         tr("Отчество"));
+                                         tr("РћС‚С‡РµСЃС‚РІРѕ"));
     employeeVisitLstModel->setHeaderData(4, Qt::Horizontal,
-                                         tr("Таб. №"));
+                                         tr("РўР°Р±. в„–"));
     employeeVisitLstModel->setHeaderData(5, Qt::Horizontal,
-                                         tr("Дата посещения"));
+                                         tr("Р”Р°С‚Р° РїРѕСЃРµС‰РµРЅРёСЏ"));
     employeeVisitLstModel->setHeaderData(6, Qt::Horizontal,
-                                         tr("ует"));
+                                         tr("СѓРµС‚"));
     employeeVisitLstModel->setHeaderData(7, Qt::Horizontal,
-                                         tr("Диагноз"));
+                                         tr("Р”РёР°РіРЅРѕР·"));
 
     employeeVisitLstView = new QTableView;
     employeeVisitLstView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -120,18 +128,18 @@ MainWindow::MainWindow(QWidget *parent) :
     visitLstLayout->addWidget(employeeVisitLstView);
 
 
-    // Панель простого отчета
+    // РџР°РЅРµР»СЊ РїСЂРѕСЃС‚РѕРіРѕ РѕС‚С‡РµС‚Р°
     reportSimplePanel   = new QWidget();
-    repSimpleTitleLbl   = new QLabel(tr("Реестр"), this);
-    repSimpleFromLbl    = new QLabel(tr("с"), this);
+    repSimpleTitleLbl   = new QLabel(tr("Р РµРµСЃС‚СЂ"), this);
+    repSimpleFromLbl    = new QLabel(tr("СЃ"), this);
     repSimpleFromDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
                                              QDate::currentDate().month(),
                                              1), this);
-    repSimpleToLbl      = new QLabel(tr("по"), this);
+    repSimpleToLbl      = new QLabel(tr("РїРѕ"), this);
     repSimpleToDEdit   = new QDateEdit(QDate(QDate::currentDate().year(),
                                              QDate::currentDate().month(),
                                              QDate::currentDate().daysInMonth()), this);
-    repSimpleMakeBtn    = new QPushButton(tr("Сформировать"));
+    repSimpleMakeBtn    = new QPushButton(tr("РЎС„РѕСЂРјРёСЂРѕРІР°С‚СЊ"));
     repSimpleMakeBtn->setMaximumWidth(100);
     connect(repSimpleMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportSimple()));
 
@@ -150,18 +158,18 @@ MainWindow::MainWindow(QWidget *parent) :
 
     reportSimplePanel->setLayout(repSimpleMainLayout);
 
-    // Панель отчета для бухгалтерии
+    // РџР°РЅРµР»СЊ РѕС‚С‡РµС‚Р° РґР»СЏ Р±СѓС…РіР°Р»С‚РµСЂРёРё
     repAccPanel = new QWidget();
-    repAccTitleLbl = new QLabel(tr("Отчет для бухгалтерии"), this);
-    repAccFromLbl = new QLabel(tr("с"), this);
+    repAccTitleLbl = new QLabel(tr("РћС‚С‡РµС‚ РґР»СЏ Р±СѓС…РіР°Р»С‚РµСЂРёРё"), this);
+    repAccFromLbl = new QLabel(tr("СЃ"), this);
     repAccFromDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
                                           QDate::currentDate().month(),
                                           1), this);
-    repAccToLbl = new QLabel(tr("по"), this);
+    repAccToLbl = new QLabel(tr("РїРѕ"), this);
     repAccToDEdit = new QDateEdit(QDate(QDate::currentDate().year(),
                                         QDate::currentDate().month(),
                                         QDate::currentDate().daysInMonth()), this);
-    repAccMakeBtn =  new QPushButton(tr("Сформировать"));
+    repAccMakeBtn =  new QPushButton(tr("РЎС„РѕСЂРјРёСЂРѕРІР°С‚СЊ"));
     repAccMakeBtn->setMaximumWidth(100);
     connect(repAccMakeBtn, SIGNAL(clicked()), this, SLOT(makeReportAccounting()));
 
@@ -200,6 +208,7 @@ void MainWindow::updateVisitsLst()
     employeeVisitLstModel->setQuery(getEmplVisitQuery(
                                         visitFilterFrom->date(),
                                         visitFilterTo->date()));
+    employeeVisitLstView->resizeColumnsToContents();
 }
 
 void MainWindow::exit()
@@ -247,22 +256,79 @@ void MainWindow::makeReportSimple()
 {
     QDate from = repSimpleFromDEdit->date();
     QDate to   = repSimpleToDEdit->date();
+    // РџРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ Р·Р° РїРµСЂРёРѕРґ
+    QList<VisitAR*> visits = VisitAR::getVisits4Period(from, to);
+    //-- РџРµСЂРІР°СЏ СЃРѕСЂС‚РёСЂРѕРІРєР° СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ
+    qSort(visits.begin(), visits.end(), VisitAR::lessThanByDate);
+    QList<VisitAR*> sortedVisits2;
 
-    QString sql = QString("SELECT e.lname, e.fname, e.mname, v.visit_date, d.name ")
-            + QString("FROM employee e, visit v, diagnosis d ")
-            + QString("WHERE (date(v.visit_date) BETWEEN date('%1') AND date('%2'))")
-                .arg(from.toString("yyyy-MM-dd"))
-                .arg(to.toString("yyyy-MM-dd"))
-            + QString(" AND  v.employee_id = e.id")
-            + QString(" AND  v.diagnosis_id = d.id");
-    qDebug() << sql;
-    QSqlQuery query(sql);
-    if(query.isActive()) {
-        query.finish();
+    // -- Р’С‚РѕСЂР°СЏ СЃРѕСЂС‚РёСЂРѕРІРєР° СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ
+    while(visits.size() > 0) {
+        VisitAR* firstVisit = visits.at(0);
+        sortedVisits2.append(firstVisit);
+        visits.removeFirst();
+        QMutableListIterator<VisitAR*> visitsIt(visits);
+        while(visitsIt.hasNext()) {
+            VisitAR* visit = visitsIt.next();
+            if(visit->isOfTheSameEmpl(*firstVisit)) {
+                sortedVisits2.append(visit);
+                visitsIt.remove();
+            }
+        }
     }
-    query.exec();
 
-    // Создание файла от чета из шаблона
+    //-- РЎРѕР·РґР°РЅРёРµ СЃРїРёСЃРєР° С‚Р°РіРѕРІ РґР»СЏ СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ РїРѕСЃР»Рµ РІС‚РѕСЂРѕР№ СЃРѕСЂС‚РёСЂРѕРІРєРё
+    QListIterator<VisitAR*> sortedVisits2It(sortedVisits2);
+    QList<VisitGroupTag> grpTags;
+    int index = 0;
+    int fIndex = index;
+    int lIndex = index;
+    VisitAR* visit  = sortedVisits2It.next();
+    int prevTabNum = visit->getEmployee()->getTabNum();
+    QDate fDate = visit->getDate();
+    QDate lDate = fDate;
+    while(sortedVisits2It.hasNext()){
+        visit = sortedVisits2It.next();
+        ++index;
+        if(visit->getEmployee()->getTabNum() == prevTabNum) {
+            lIndex = index;
+            lDate = visit->getDate();
+        } else {
+            VisitGroupTag grpTag;
+            grpTag.setFirstIndex(fIndex);
+            grpTag.setFirstDate(fDate);
+            grpTag.setLastIndex(lIndex);
+            grpTag.setLastDate(lDate);
+            grpTags.append(grpTag);
+
+            lIndex = fIndex = index;
+            lDate = fDate = visit->getDate();
+            prevTabNum = visit->getEmployee()->getTabNum();
+        }
+    }
+
+    // РћСЃС‚Р°РµС‚СЃСЏ РїРѕСЃР»РµРґРЅРёР№ РЅРµСЃС„РѕСЂРјРёСЂРѕРІР°РЅРЅС‹Р№ С‚Р°Рі, С„РѕСЂРјРёСЂСѓРµРј.
+
+    VisitGroupTag grpTag;
+    grpTag.setFirstIndex(fIndex);
+    grpTag.setFirstDate(fDate);
+    grpTag.setLastIndex(lIndex);
+    grpTag.setLastDate(lDate);
+    grpTags.append(grpTag);
+
+    //-- РўСЂРµС‚СЊСЏ СЃРѕСЂС‚РёСЂРѕРІРєР° СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ
+    qSort(grpTags.begin(), grpTags.end(), VisitGroupTag::lessThen);
+    QList<VisitAR*> sortedVisits3;
+    QListIterator<VisitGroupTag> tagsIt(grpTags);
+    while(tagsIt.hasNext()) {
+        VisitGroupTag tag = tagsIt.next();
+
+        for (int i = tag.getFirstIndex(); i <= tag.getLastIndex(); i++) {
+            sortedVisits3.append(sortedVisits2.at(i));
+        }
+    }
+
+    // РЎРѕР·РґР°РЅРёРµ С„Р°Р№Р»Р° РѕС‚С‡РµС‚Р° РёР· С€Р°Р±Р»РѕРЅР°
     QString tmplFileName(QString(
                      #ifdef QT_DEBUG
                          "%1\\..\\DantistQt\\templates\\register.xlsx"
@@ -290,40 +356,49 @@ void MainWindow::makeReportSimple()
 
     // QAxObject *sheets = workbook->querySubObject( "Worksheets" );
     QAxObject *sheet = workbook->querySubObject("Worksheets(Int)", 1);
-    // Запись периода отчета в отчет
+    // Р—Р°РїРёСЃСЊ РїРµСЂРёРѕРґР° РѕС‚С‡РµС‚Р° РІ РѕС‚С‡РµС‚
     sheet->querySubObject("Cells(Int, Int)", 4, 2 )
-            ->setProperty("Value", QVariant(QString(tr("За период с "))
+            ->setProperty("Value", QVariant(QString(tr("Р—Р° РїРµСЂРёРѕРґ СЃ "))
                                             + from.toString("dd.MM.yyyy")
-                                            + QString(tr(" по "))
+                                            + QString(tr(" РїРѕ "))
                                             + to.toString("dd.MM.yyyy")));
 
     int startRow = 7;
     int count = 0;
-    while( query.next() ) {
-        QString lname = query.value(0).toString();
-        QString fname = query.value(1).toString();
-        QString mname = query.value(2).toString();
-        QDate visiDate = query.value(3).toDate();
-        QString diagnosis = query.value(4).toString();
+    QListIterator<VisitAR*> sortedVisits3It(sortedVisits3);
+    while( sortedVisits3It.hasNext() ) {
+        VisitAR *visit = sortedVisits3It.next();
+        QString lname = visit->getEmployee()->getLname();
+        QString fname = visit->getEmployee()->getFname();
+        QString mname = visit->getEmployee()->getMname();
+        QDate birthDate = visit->getEmployee()->getBirthDate();
+        QDate visiDate = visit->getDate();
+        QString diagnosis = visit->getDiagnsAsStr();
         qDebug() << lname << fname << mname;
         count++;
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 1 )
                 ->setProperty("Value", QVariant(count));
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 2 )
                 ->setProperty("Value", QVariant(lname + " " + fname + " " + mname));
-        sheet->querySubObject("Cells(Int, Int)", startRow + count, 4 )
-                ->setProperty("Value", QVariant(visiDate.toString("dd.MM.yyyy")));
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 3 )
+                ->setProperty("Value", QVariant(birthDate.toString("dd.MM.yyyy")));
         sheet->querySubObject("Cells(Int, Int)", startRow + count, 5 )
+                ->setProperty("Value", QVariant(visiDate.toString("dd.MM.yyyy")));
+        sheet->querySubObject("Cells(Int, Int)", startRow + count, 6 )
                 ->setProperty("Value", QVariant(diagnosis));
 
-        // Рисование границ
-        drawCellBorders(*sheet, startRow + count, 5);
+        // Р РёСЃРѕРІР°РЅРёРµ РіСЂР°РЅРёС†
+        drawCellBorders(*sheet, startRow + count, 6);
     }
 
+    // РћС‡РёСЃС‚РёРј РїР°РјСЏС‚СЊ
+    qDeleteAll(sortedVisits2);
+    sortedVisits2.clear();
+
     sheet->querySubObject("Cells(Int, Int)", startRow + count + 2, 2 )
-            ->setProperty("Value", QVariant(tr("Исп. Панкратова А.В.")));
+            ->setProperty("Value", QVariant(tr("РСЃРї. РџР°РЅРєСЂР°С‚РѕРІР° Рђ.Р’.")));
     sheet->querySubObject("Cells(Int, Int)", startRow + count + 3, 2 )
-            ->setProperty("Value", QVariant(tr("Тел. 47-5-25")));
+            ->setProperty("Value", QVariant(tr("РўРµР». 47-5-25")));
 
     QAxObject *cell = sheet->querySubObject("Cells(Int, Int)", 3, 2 );
     QVariant cellValue = cell->dynamicCall("value");
@@ -341,27 +416,31 @@ void MainWindow::showReportAccounting(){
     employeeToolBar->hide();
     stackedWidget->setCurrentIndex(3);}
 
+
 void MainWindow::makeReportAccounting(){
     QDate from = repAccFromDEdit->date();
     QDate to   = repAccToDEdit->date();
 
-    // TODO: вынести константу 750 в конфигурационный файл
+    // TODO: РІС‹РЅРµСЃС‚Рё РєРѕРЅСЃС‚Р°РЅС‚Сѓ 800 РІ РєРѕРЅС„РёРіСѓСЂР°С†РёРѕРЅРЅС‹Р№ С„Р°Р№Р»
     QString sql = QString("SELECT DISTINCT e.lname, e.fname, e.mname, e.tab_num, e.work_place, ")
-            + QString("v.visit_date, sum(v.uet), sum(v.uet)*750 ")
+            + QString("v.visit_date, sum(v.uet), sum(v.uet)*800 ")
             + QString("FROM employee e, visit v ")
             + QString("WHERE (v.visit_date BETWEEN date('%1') AND date('%2')) ")
                 .arg(from.toString("yyyy-MM-dd"))
                 .arg(to.toString("yyyy-MM-dd"))
             + QString("AND v.employee_id = e.id ")
-            + QString("GROUP BY e.lname");
-    qDebug() << sql;
+            + QString("GROUP BY e.tab_num ")
+            + QString("ORDER BY v.visit_date, e.lname");
+    #ifdef QT_DEBUG
+        qDebug() << sql;
+    #endif
 
     QSqlQuery query(sql);
     if(!query.exec()) {
         qDebug() << tr("makeReportAccounting error: %1").arg(query.lastError().text());
     }
 
-    // Создание файла отчета из шаблона
+    // РЎРѕР·РґР°РЅРёРµ С„Р°Р№Р»Р° РѕС‚С‡РµС‚Р° РёР· С€Р°Р±Р»РѕРЅР°
 
     QString tmplFileName(QString(
                        #ifdef QT_DEBUG
@@ -389,21 +468,22 @@ void MainWindow::makeReportAccounting(){
                 "Open(const QString&", accRepFileName);
 
     QAxObject *sheet = workbook->querySubObject("Worksheets(Int)", 1);
-    //Формирование шапки отчета
+    //Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ С€Р°РїРєРё РѕС‚С‡РµС‚Р°
     sheet->querySubObject("Cells(Int, Int)", 5, 5 )
-            ->setProperty("Value", QVariant(tr("''____''___________ %1г.")
+            ->setProperty("Value", QVariant(tr("''____''___________ %1Рі.")
                                             .arg(QDate::currentDate().year())));
     sheet->querySubObject("Cells(Int, Int)", 9, 4 )
-            ->setProperty("Value", QVariant(QString(tr("с "))
+            ->setProperty("Value", QVariant(QString(tr("СЃ "))
                                             + from.toString("dd.MM.yyyy")
-                                            + QString(tr(" по "))
+                                            + QString(tr(" РїРѕ "))
                                             + to.toString("dd.MM.yyyy")));
 
     int startRow = 12;
     int rowCount = 0;
     float allUet = 0;
     float totalSpent =0;
-    QLocale locale(QLocale::Russian, QLocale::RussianFederation);// Для форматирования чисел
+    // TODO: РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РіР»Р°Р±Р°Р»СЊРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё Р»РѕРєР°Р»Рё
+    QLocale locale(QLocale::Russian, QLocale::RussianFederation);// Р”Р»СЏ С„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёСЏ С‡РёСЃРµР»
     while( query.next() ) {
         QString lname = query.value(0).toString();
         QString fname = query.value(1).toString();
@@ -428,30 +508,38 @@ void MainWindow::makeReportAccounting(){
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 4 )
                 ->setProperty("Value", QVariant(work_place));
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 5 )
-                ->setProperty("Value", QVariant(locale.toString(uet_sum)));
+                ->setProperty("HorizontalAlignment", -4152);
+        sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 5 )
+                ->setProperty("Value", QVariant( locale.toString(uet_sum, 'f', 2) ));
 
         sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 6 )
-                ->setProperty("Value", QVariant(locale.toString(sum_spent)));
+                ->setProperty("HorizontalAlignment", -4152);
+        sheet->querySubObject("Cells(Int, Int)", startRow + rowCount, 6 )
+                ->setProperty("Value", QVariant( locale.toString(sum_spent, 'f', 2) ));
         drawCellBorders(*sheet, startRow + rowCount, 7);
     }
 
-    // Подошва отчета
+    // РџРѕРґРѕС€РІР° РѕС‚С‡РµС‚Р°
     drawCellBorders(*sheet, startRow + rowCount + 1, 7);
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 2 )
             ->setProperty("HorizontalAlignment", -4152);
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 2 )
-            ->setProperty("Value", QVariant(tr("Итого:")));
+            ->setProperty("Value", QVariant(tr("РС‚РѕРіРѕ:")));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 5 )
-            ->setProperty("Value", locale.toString(allUet));
+            ->setProperty("HorizontalAlignment", -4152);
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 5 )
+            ->setProperty("Value", QVariant(locale.toString(allUet, 'f', 2)));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 6 )
-            ->setProperty("Value", locale.toString(totalSpent));
+            ->setProperty("HorizontalAlignment", -4152);
+    sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 1, 6 )
+            ->setProperty("Value", QVariant(locale.toString(totalSpent, 'f', 2)));
 
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 2 )
             ->setProperty("HorizontalAlignment", -4152);
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 2 )
-            ->setProperty("Value", QVariant(tr("Зубной врач")));
+            ->setProperty("Value", QVariant(tr("Р—СѓР±РЅРѕР№ РІСЂР°С‡")));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 6 )
-            ->setProperty("Value", QVariant(tr("Панкратова А.В.")));
+            ->setProperty("Value", QVariant(tr("РџР°РЅРєСЂР°С‚РѕРІР° Рђ.Р’.")));
     sheet->querySubObject("Cells(Int, Int)", startRow + rowCount + 4, 3 )
             ->querySubObject("Borders(Int)", 9)
             ->setProperty("LineStyle", 1);
@@ -484,11 +572,11 @@ void MainWindow::drawCellBorders(QAxObject &sheet, int row, int colCount)
 void MainWindow::importEmplCSV()
 {
     QString fileName = QFileDialog::getOpenFileName(this,
-            tr("Открыть CSV файл"), QDir::currentPath(),
-                   tr("Файл CSV (разделитель точка с запятой) (*.csv)"));
+            tr("РћС‚РєСЂС‹С‚СЊ CSV С„Р°Р№Р»"), QDir::currentPath(),
+                   tr("Р¤Р°Р№Р» CSV (СЂР°Р·РґРµР»РёС‚РµР»СЊ С‚РѕС‡РєР° СЃ Р·Р°РїСЏС‚РѕР№) (*.csv)"));
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
-        std::cerr << tr("Ошибка открытия файла %1").arg(fileName).toStdString()
+        std::cerr << tr("РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р° %1").arg(fileName).toStdString()
                   << std::endl;
         return;
     }
@@ -500,13 +588,13 @@ void MainWindow::importEmplCSV()
     delQuery.exec();
     QSqlQuery insQuery;
     insQuery.prepare(QString("INSERT INTO employee ")
-                  + QString("(lname, fname, mname, tab_num, work_place) ")
+                  + QString("(lname, fname, mname, birth_date, tab_num, work_place) ")
                   + QString("VALUES ")
-                  + QString("(:lname, :fname, :mname, :tab_num, :work_place)"));
+                  + QString("(:lname, :fname, :mname, :birth_date, :tab_num, :work_place)"));
     while (!in.atEnd()) {
         QString line = in.readLine();
         QStringList fields = line.split(';');
-        if (fields.size() >= 5) {
+        if (fields.size() >= 6) {
             int tab_num = fields.takeFirst().toInt();
             QString lname = fields.takeFirst().trimmed().toLower();
             lname = lname.left(1).toUpper() + lname.right(lname.length() - 1);
@@ -514,10 +602,12 @@ void MainWindow::importEmplCSV()
             fname = fname.left(1).toUpper() + fname.right(fname.length() - 1);
             QString mname = fields.takeFirst().trimmed().toLower();
             mname = mname.left(1).toUpper() + mname.right(mname.length() - 1);
+            QDate birthDate = QDate::fromString( fields.takeFirst() );
             QString work_place = fields.takeFirst();
             insQuery.bindValue(":lname", lname);
             insQuery.bindValue(":fname", fname);
             insQuery.bindValue(":mname", mname);
+            insQuery.bindValue(":birthDate", birthDate);
             insQuery.bindValue(":tab_num", tab_num);
             insQuery.bindValue(":work_place", work_place);
             if(!insQuery.exec()){
@@ -530,12 +620,11 @@ void MainWindow::importEmplCSV()
 
 
             }
-
         }
     }
     file.close();
     QMessageBox msg(this);
-    msg.setText(tr("Импорт закончен."));
+    msg.setText(tr("РРјРїРѕСЂС‚ Р·Р°РєРѕРЅС‡РµРЅ."));
     msg.exec();
 }
 
@@ -554,8 +643,8 @@ void MainWindow::delDiagnosis()
 {
     QModelIndexList list = diagnLstView->selectionModel()->selection().indexes();
     if(list.size() == 0){
-        QMessageBox::warning(this, tr("Ошибка удаления"),
-                             tr("Не выбрана строка"));
+        QMessageBox::warning(this, tr("РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ"),
+                             tr("РќРµ РІС‹Р±СЂР°РЅР° СЃС‚СЂРѕРєР°"));
         return;
     }
     QModelIndex index = list.first();
@@ -580,8 +669,8 @@ void MainWindow::editEmployee()
 {
     QModelIndexList list = employeeLstView->selectionModel()->selection().indexes();
     if(list.size() == 0){
-        QMessageBox::warning(this, tr("Ошибка редактирования"),
-                             tr("Не выбрана строка"));
+        QMessageBox::warning(this, tr("РћС€РёР±РєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ"),
+                             tr("РќРµ РІС‹Р±СЂР°РЅР° СЃС‚СЂРѕРєР°"));
         return;
     }
     QModelIndex index = list.first();
@@ -601,171 +690,202 @@ void MainWindow::delEmployee()
 {
     QModelIndexList list = employeeLstView->selectionModel()->selection().indexes();
     if(list.size() == 0){
-        QMessageBox::warning(this, tr("Ошибка удаления"),
-                             tr("Не выбрана строка"));
+        QMessageBox::warning(this, tr("РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ"),
+                             tr("РќРµ РІС‹Р±СЂР°РЅР° СЃС‚СЂРѕРєР°"));
         return;
     }
-    QModelIndex index = list.first();
-    int row = index.row();
-    employeeLstModel->removeRow(row);
-    employeeLstModel->submitAll();
+
+    QMessageBox confirmDlg(QMessageBox::Question, tr("РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ СѓРґР°Р»РµРЅРёСЏ"),
+                           tr("Р”РµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°?"),
+                           QMessageBox::Yes | QMessageBox::No);
+    if( confirmDlg.exec()  == QMessageBox::Yes )
+    {
+        QModelIndex index = list.first();
+        int row = index.row();
+        employeeLstModel->removeRow(row);
+        employeeLstModel->submitAll();
+    }
 }
 
 void MainWindow::addEmployeeVisit()
 {
-    if(!employeeVisitDlg){
-        employeeVisitDlg = new EmployeeVisitDialog(-1, employeeVisitLstModel, this);
-        connect(employeeVisitDlg, SIGNAL(visitInserted()), this, SLOT(updateVisitsLst()));
-        connect(addEmployeeVisitAction, SIGNAL(triggered()), employeeVisitDlg, SLOT(initBeforDisplay()));
-    } else {
-        employeeVisitDlg->rowToEdit(-1);
-    }
-    employeeVisitDlg->show();
-    employeeVisitDlg->raise();
-    employeeVisitDlg->activateWindow();
+    openVisitDlg(new VisitAR);
 }
 
 void MainWindow::editEmployeeVisit()
 {
     QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
+    if(list.size() == 0){
+        QMessageBox::warning(this, tr("РћС€РёР±РєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ"),
+                             tr("РќРµ РІС‹Р±СЂР°РЅР° СЃС‚СЂРѕРєР°"));
+        return;
+    }
+    int visitId = list.first().data(0).toInt();
+    VisitAR *visit = VisitAR::getVisitById(visitId);
+    if( visit != 0 )
+        openVisitDlg(visit);
+    else {};// СЃРѕРѕР±С‰РµРЅРёРµ РѕР± РѕС€РёР±РєРµ
+}
+
+void MainWindow::delEmployeeVisit(){
+
+    QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
+
+    if( list.size() == 0 ) {
+        QMessageBox::warning(this, tr("РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ"),
+                             tr("РќРµ РІС‹Р±СЂР°РЅР° СЃС‚СЂРѕРєР°"));
+        return;
+    }
+
     QModelIndex index = list.first();
     int row = index.row();
-    if(!employeeVisitDlg){
-        employeeVisitDlg = new EmployeeVisitDialog(row, employeeVisitLstModel, this);
-    } else {
-        employeeVisitDlg->rowToEdit(row);
+    int selectId = employeeVisitLstModel->index(row, 0).data().toInt();
+
+    QMessageBox confirmDlg(QMessageBox::Question, tr("РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ СѓРґР°Р»РµРЅРёСЏ"),
+                           tr("Р”РµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ РІРёР·РёС‚?"),
+                           QMessageBox::Yes | QMessageBox::No);
+    if( confirmDlg.exec() == QMessageBox::Yes )
+    {
+        VisitAR visit;
+        visit.setId(selectId);
+        visit.remove();
+        updateVisitsLst();
     }
+}
+
+void MainWindow::openVisitDlg(VisitAR *visit)
+{
+    if(!employeeVisitDlg){
+        employeeVisitDlg = new EmployeeVisitDialog( this );
+        connect(employeeVisitDlg, SIGNAL(visitInserted()), this, SLOT(updateVisitsLst()));
+        // connect(addEmployeeVisitAction, SIGNAL(triggered()), employeeVisitDlg, SLOT(initBeforDisplay()));
+    }
+    employeeVisitDlg->setVisitToEdit(visit);
     employeeVisitDlg->show();
     employeeVisitDlg->raise();
     employeeVisitDlg->activateWindow();
 }
-void MainWindow::delEmployeeVisit(){
-    QModelIndexList list = employeeVisitLstView->selectionModel()->selection().indexes();
-    QModelIndex index = list.first();
-    int row = index.row();
-    int selectId = employeeVisitLstModel->index(row, 0).data().toInt();
-    employeeVisitLstModel->removeRow(row);
-    QString sql = QString("DELETE FROM visit WHERE id = %1").arg(selectId);
-    QSqlQuery qury(sql);
-
-    updateVisitsLst();
-}
 
 void MainWindow::createActions()
 {
-    exitAction = new QAction(tr("Выход"), this);
+    exitAction = new QAction(tr("Р’С‹С…РѕРґ"), this);
     connect(exitAction, SIGNAL(triggered()), this, SLOT(exit()));
 
-    aboutAction = new QAction(tr("О программе"), this);
+    aboutAction = new QAction(tr("Рћ РїСЂРѕРіСЂР°РјРјРµ"), this);
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
 
-    showVisitsAction = new QAction(tr("Визиты"), this);
+    showVisitsAction = new QAction(tr("Р’РёР·РёС‚С‹"), this);
     connect(showVisitsAction, SIGNAL(triggered()), this, SLOT(showVisits()));
 
-    showDiagnAction = new QAction(tr("Диагнозы"), this);
+    showDiagnAction = new QAction(tr("Р”РёР°РіРЅРѕР·С‹"), this);
     connect(showDiagnAction, SIGNAL(triggered()), this, SLOT(showDiagnosises()));
 
-    addDiagnAction = new QAction(tr("Добавить диагноз"), this);
+    addDiagnAction = new QAction(tr("Р”РѕР±Р°РІРёС‚СЊ РґРёР°РіРЅРѕР·"), this);
     addDiagnAction->setIcon(QIcon(":/images/add_file.png"));
-    addDiagnAction->setToolTip(tr("Добавить диагноз"));
+    addDiagnAction->setToolTip(tr("Р”РѕР±Р°РІРёС‚СЊ РґРёР°РіРЅРѕР·"));
     addDiagnAction->setShortcut(QKeySequence(Qt::Key_Insert));
     connect(addDiagnAction, SIGNAL(triggered()), this, SLOT(addDiagnosis()));
 
-    delDiagnAction = new QAction(tr("Удалить диагноз"), this);
+    delDiagnAction = new QAction(tr("РЈРґР°Р»РёС‚СЊ РґРёР°РіРЅРѕР·"), this);
     delDiagnAction->setIcon(QIcon(":/images/delete.png"));
-    delDiagnAction->setToolTip(tr("Удалить диагноз"));
+    delDiagnAction->setToolTip(tr("РЈРґР°Р»РёС‚СЊ РґРёР°РіРЅРѕР·"));
     connect(delDiagnAction, SIGNAL(triggered()), this, SLOT(delDiagnosis()));
 
-    showEmployeesAction = new QAction(tr("Сотрудники"), this);
+    showEmployeesAction = new QAction(tr("РЎРѕС‚СЂСѓРґРЅРёРєРё"), this);
     connect(showEmployeesAction, SIGNAL(triggered()), this, SLOT(showEmployees()));
 
-    reportSimpleAction = new QAction(tr("Реестр"), this);
+    reportSimpleAction = new QAction(tr("Р РµРµСЃС‚СЂ"), this);
     connect(reportSimpleAction, SIGNAL(triggered()), this, SLOT(showReportSimple()));
 
-    reportForAccountingAction = new QAction(tr("Для бухгалтерии"), this);
+    reportForAccountingAction = new QAction(tr("Р”Р»СЏ Р±СѓС…РіР°Р»С‚РµСЂРёРё"), this);
     connect(reportForAccountingAction, SIGNAL(triggered()),
             this, SLOT(showReportAccounting()));
 
-    importEmplCSVAction = new QAction(tr("Импорт сотрудников из CSV"), this);
+    importEmplCSVAction = new QAction(tr("РРјРїРѕСЂС‚ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РёР· CSV"), this);
     connect(importEmplCSVAction, SIGNAL(triggered()), this, SLOT(importEmplCSV()));
 
-    addEmployeeAction = new QAction(tr("Добавить сотрудника"), this);
+    addEmployeeAction = new QAction(tr("Р”РѕР±Р°РІРёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     addEmployeeAction->setIcon(QIcon(":/images/add_file.png"));
-    addEmployeeAction->setToolTip(tr("Добавить сотрудника"));
+    addEmployeeAction->setToolTip(tr("Р”РѕР±Р°РІРёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
     addEmployeeAction->setShortcut(QKeySequence(Qt::Key_Insert));
     connect(addEmployeeAction, SIGNAL(triggered()), this, SLOT(addEmployee()));
 
-    editEmployeeAction = new QAction(tr("Редактировать сотрудника"), this);
+    editEmployeeAction = new QAction(tr("Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     editEmployeeAction->setIcon(QIcon(":/images/edit.png"));
-    editEmployeeAction->setToolTip(tr("Редактировать сотрудника"));
+    editEmployeeAction->setToolTip(tr("Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
+    editEmployeeAction->setShortcut(QKeySequence(Qt::Key_F2));
     connect(editEmployeeAction, SIGNAL(triggered()), this, SLOT(editEmployee()));
 
-    delEmployeeAction = new QAction(tr("Удалить сотрудника"), this);
+    delEmployeeAction = new QAction(tr("РЈРґР°Р»РёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     delEmployeeAction->setIcon(QIcon(":/images/delete.png"));
-    delEmployeeAction->setToolTip(tr("Удалить сотрудника"));
+    delEmployeeAction->setToolTip(tr("РЈРґР°Р»РёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
+    delEmployeeAction->setShortcut(QKeySequence(Qt::Key_Delete));
     connect(delEmployeeAction, SIGNAL(triggered()), this, SLOT(delEmployee()));
 
-    addEmployeeVisitAction = new QAction(tr("Добавить визит сотрудника"), this);
+    addEmployeeVisitAction = new QAction(tr("Р”РѕР±Р°РІРёС‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     addEmployeeVisitAction->setIcon(QIcon(":/images/add_file.png"));
-    addEmployeeVisitAction->setToolTip(tr("Добавить визит сотрудника"));
+    addEmployeeVisitAction->setToolTip(tr("Р”РѕР±Р°РІРёС‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
     addEmployeeVisitAction->setShortcut(QKeySequence(Qt::Key_Insert));
     connect(addEmployeeVisitAction, SIGNAL(triggered()), this, SLOT(addEmployeeVisit()));
 
-    editEmployeeVisitAction = new QAction(tr("Редактировать визит сотрудника"), this);
+    editEmployeeVisitAction = new QAction(tr("Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     editEmployeeVisitAction->setIcon(QIcon(":/images/edit.png"));
-    editEmployeeVisitAction->setToolTip(tr("Редактировать визит сотрудника"));
+    editEmployeeVisitAction->setToolTip(tr("Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
+    editEmployeeVisitAction->setShortcut(QKeySequence(Qt::Key_F2));
     connect(editEmployeeVisitAction, SIGNAL(triggered()), this, SLOT(editEmployeeVisit()));
 
-    delEmployeeVisitAction = new QAction(tr("Удалить визит сотрудника"), this);
+    delEmployeeVisitAction = new QAction(tr("РЈРґР°Р»РёС‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"), this);
     delEmployeeVisitAction->setIcon(QIcon(":/images/delete.png"));
-    delEmployeeVisitAction->setToolTip(tr("Удалить визит сотрудника"));
+    delEmployeeVisitAction->setToolTip(tr("РЈРґР°Р»РёС‚СЊ РІРёР·РёС‚ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
+    delEmployeeVisitAction->setShortcut(QKeySequence(Qt::Key_Delete));
     connect(delEmployeeVisitAction, SIGNAL(triggered()), this, SLOT(delEmployeeVisit()));
 }
 
 void MainWindow::createMenus()
 {
-    fileMenu = menuBar()->addMenu(tr("Файл"));
+    fileMenu = menuBar()->addMenu(tr("Р¤Р°Р№Р»"));
     fileMenu->addAction(exitAction);
 
-    listsMenu = menuBar()->addMenu(tr("Списки"));
+    listsMenu = menuBar()->addMenu(tr("РЎРїРёСЃРєРё"));
     listsMenu->addAction(showDiagnAction);
     listsMenu->addAction(showVisitsAction);
     listsMenu->addAction(showEmployeesAction);
 
-    reportsMenu = menuBar()->addMenu(tr("Отчеты"));
+    reportsMenu = menuBar()->addMenu(tr("РћС‚С‡РµС‚С‹"));
     reportsMenu->addAction(reportSimpleAction);
     reportsMenu->addAction(reportForAccountingAction);
 
-    systemMenu = menuBar()->addMenu(tr("Системное"));
+    systemMenu = menuBar()->addMenu(tr("РЎРёСЃС‚РµРјРЅРѕРµ"));
     systemMenu->addAction(importEmplCSVAction);
 
-    helpMenu = menuBar()->addMenu(tr("Помощь"));
+    helpMenu = menuBar()->addMenu(tr("РџРѕРјРѕС‰СЊ"));
     helpMenu->addAction(aboutAction);
 
 }
 
-/*! \brief Метод создает все тулбары.
+/*! \brief РњРµС‚РѕРґ СЃРѕР·РґР°РµС‚ РІСЃРµ С‚СѓР»Р±Р°СЂС‹.
  *
- *   Сразу инициализируется отображение/скрытие тулбаров.
+ *   РЎСЂР°Р·Сѓ РёРЅРёС†РёР°Р»РёР·РёСЂСѓРµС‚СЃСЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ/СЃРєСЂС‹С‚РёРµ С‚СѓР»Р±Р°СЂРѕРІ.
  *
  */
 void MainWindow::createToolBars()
 {
-    diagnToolBar = addToolBar(tr("Панель диагноза"));
+    diagnToolBar = addToolBar(tr("РџР°РЅРµР»СЊ РґРёР°РіРЅРѕР·Р°"));
     diagnToolBar->addAction(addDiagnAction);
     diagnToolBar->addAction(delDiagnAction);
     diagnToolBar->hide();
 
-    employeeToolBar = addToolBar(tr("Панель сотрудника"));
+    employeeToolBar = addToolBar(tr("РџР°РЅРµР»СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°"));
     employeeToolBar->addAction(addEmployeeAction);
     employeeToolBar->addAction(editEmployeeAction);
     employeeToolBar->addAction(delEmployeeAction);
     employeeToolBar->hide();
 
-    employeeVisitToolBar = addToolBar(tr("Панель визита сотрудника"));
+    employeeVisitToolBar = addToolBar(tr("РџР°РЅРµР»СЊ РІРёР·РёС‚Р° СЃРѕС‚СЂСѓРґРЅРёРєР°"));
     employeeVisitToolBar->addAction(addEmployeeVisitAction);
-    // employeeVisitToolBar->addAction(editEmployeeVisitAction);
+    employeeVisitToolBar->addAction(editEmployeeVisitAction);
     employeeVisitToolBar->addAction(delEmployeeVisitAction);
 
 }
+
 

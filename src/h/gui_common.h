@@ -7,3 +7,4 @@ enum FormMode {
 };
 
 #endif // GUI_COMMON_H
+

@@ -12,9 +12,11 @@
 #include <QAxObject>
 #include <QDateEdit>
 
-#include <src/h/diagnosisdialog.h>
-#include <src/h/employeedialog.h>
-#include <src/h/employeevisitdialog.h>
+#include "src/h/diagnosisdialog.h"
+#include "src/h/employeedialog.h"
+#include "src/h/employeevisitdialog.h"
+
+#include "src/h/db/visitar.h"
 
 namespace Ui {
 class MainWindow;
@@ -28,13 +30,14 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    static QSqlQuery getEmplVisitQuery(QDate from, QDate to) {
+    static QString getEmplVisitQuery(QDate from, QDate to) {
 
         return QString("SELECT v.id, e.lname, e.fname, e.mname, e.tab_num, ")
-                + QString("v.visit_date, v.uet, d.name ")
-                + QString("FROM employee e, visit v, diagnosis d ")
+                + QString("v.visit_date, v.uet, ")
+                + QString("(SELECT group_concat(d.name) FROM visit_diagnosis vd, diagnosis d ")
+                + QString("WHERE vd.visit_id = v.id AND d.id = vd.diagnosis_id) AS diagnosises " )
+                + QString("FROM employee e, visit v ")
                 + QString("WHERE v.employee_id = e.id AND ")
-                + QString("v.diagnosis_id = d.id AND ")
                 + QString("(v.visit_date BETWEEN \"%1\" AND \"%2\")")
                 .arg(from.toString("yyyy-MM-dd"))
                 .arg(to.toString("yyyy-MM-dd"));
@@ -65,6 +68,7 @@ private slots:
     void addEmployeeVisit();
     void editEmployeeVisit();
     void delEmployeeVisit();
+    void openVisitDlg(VisitAR *visit);
 
     void importEmplCSV();
 
@@ -73,13 +77,13 @@ private:
     void createMenus();
     void createToolBars();
 
-    // Рисование гнаниц ячеек отчета
+    // Р РёСЃРѕРІР°РЅРёРµ РіРЅР°РЅРёС† СЏС‡РµРµРє РѕС‚С‡РµС‚Р°
     void drawCellBorders(QAxObject &sheet, int row, int colCount);
 
 private:
     Ui::MainWindow *ui;
 
-    // Модель и вид для списка визитов
+    // РњРѕРґРµР»СЊ Рё РІРёРґ РґР»СЏ СЃРїРёСЃРєР° РІРёР·РёС‚РѕРІ
     QSqlQuery *employeeVisitLstQuery;
     QSqlQueryModel *employeeVisitLstModel;
     QTableView  *employeeVisitLstView;
@@ -87,15 +91,15 @@ private:
     QDateEdit *visitFilterTo;
     QPushButton *visitFilterApplyBtn;
 
-    // Модель и вид для списка сотрудников
+    // РњРѕРґРµР»СЊ Рё РІРёРґ РґР»СЏ СЃРїРёСЃРєР° СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ
     QSqlTableModel *employeeLstModel;
     QTableView  *employeeLstView;
 
-    // Модель и вид для списка диагнозов
+    // РњРѕРґРµР»СЊ Рё РІРёРґ РґР»СЏ СЃРїРёСЃРєР° РґРёР°РіРЅРѕР·РѕРІ
     QSqlTableModel *diagnLstModel;
     QTableView  *diagnLstView;
 
-    QWidget *reportSimplePanel; // Панель простого отчета
+    QWidget *reportSimplePanel; // РџР°РЅРµР»СЊ РїСЂРѕСЃС‚РѕРіРѕ РѕС‚С‡РµС‚Р°
     QLabel *repSimpleTitleLbl;
     QLabel *repSimpleFromLbl;
     QDateEdit *repSimpleFromDEdit;
@@ -103,7 +107,7 @@ private:
     QDateEdit *repSimpleToDEdit;
     QPushButton   *repSimpleMakeBtn;
 
-    QWidget *repAccPanel; // Панель отчета для бухгалтерии
+    QWidget *repAccPanel; // РџР°РЅРµР»СЊ РѕС‚С‡РµС‚Р° РґР»СЏ Р±СѓС…РіР°Р»С‚РµСЂРёРё
     QLabel *repAccTitleLbl;
     QLabel *repAccFromLbl;
     QDateEdit *repAccFromDEdit;
@@ -150,3 +154,4 @@ private:
 };
 
 #endif // MAINWINDOW_H
+

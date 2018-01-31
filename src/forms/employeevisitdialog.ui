@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>426</width>
-    <height>226</height>
+    <height>337</height>
    </rect>
   </property>
   <property name="font">
@@ -26,7 +26,7 @@
    <item row="5" column="0">
     <widget class="QLabel" name="visitTimeLabel">
      <property name="text">
-      <string>Время</string>
+      <string>Дата</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -88,6 +88,12 @@
        <property name="text">
         <string>ОК</string>
        </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+       <property name="default">
+        <bool>false</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -100,6 +106,9 @@
        </property>
        <property name="text">
         <string>Отмена</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
        </property>
       </widget>
      </item>
@@ -128,7 +137,7 @@
       <string>Диагноз</string>
      </property>
      <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
      </property>
     </widget>
    </item>
@@ -146,10 +155,102 @@
     <widget class="QLineEdit" name="uetEdit"/>
    </item>
    <item row="2" column="1">
-    <widget class="QComboBox" name="diagnCBox"/>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="1" column="0">
+      <widget class="QListView" name="allDiagnListView"/>
+     </item>
+     <item row="1" column="5">
+      <widget class="QListView" name="emplDiagnListView"/>
+     </item>
+     <item row="1" column="2">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="selectDiagnBtn">
+         <property name="maximumSize">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>&gt;</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="unselectDiagnBtn">
+         <property name="maximumSize">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>&lt;</string>
+         </property>
+         <property name="autoDefault">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="font">
+        <font>
+         <weight>50</weight>
+         <italic>true</italic>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>все диагнозы</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QLabel" name="label_2">
+       <property name="font">
+        <font>
+         <weight>50</weight>
+         <italic>true</italic>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>диагнозы пациента</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>emplLineEdit</tabstop>
+  <tabstop>emplListView</tabstop>
+  <tabstop>allDiagnListView</tabstop>
+  <tabstop>selectDiagnBtn</tabstop>
+  <tabstop>emplDiagnListView</tabstop>
+  <tabstop>unselectDiagnBtn</tabstop>
+  <tabstop>uetEdit</tabstop>
+  <tabstop>visitDateDEdit</tabstop>
+  <tabstop>acceptBtn</tabstop>
+  <tabstop>rejectBtn</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
