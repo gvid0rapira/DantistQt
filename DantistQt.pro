@@ -20,7 +20,8 @@ SOURCES += src/cpp/main.cpp\
     src/cpp/diagnostablemodel.cpp \
     src/cpp/db/employeear.cpp \
     src/cpp/db/diagnosisar.cpp \
-    src/cpp/db/visitar.cpp
+    src/cpp/db/visitar.cpp \
+    src/cpp/report/visitgrouptag.cpp
 
 HEADERS  += src/h/mainwindow.h \
     src/h/db/Connection.h \
@@ -31,7 +32,9 @@ HEADERS  += src/h/mainwindow.h \
     src/h/diagnostablemodel.h \
     src/h/db/employeear.h \
     src/h/db/diagnosisar.h \
-    src/h/db/visitar.h
+    src/h/db/visitar.h \
+    src/h/report/visitgrouptag.h \
+    src/h/Currency.h
 
 
 FORMS    += src/forms/mainwindow.ui \
